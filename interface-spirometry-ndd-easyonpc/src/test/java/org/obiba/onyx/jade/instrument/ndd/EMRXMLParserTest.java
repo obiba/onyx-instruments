@@ -14,6 +14,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.text.SimpleDateFormat;
 import java.util.Map;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -29,6 +30,9 @@ import org.xml.sax.SAXException;
  *
  */
 public class EMRXMLParserTest {
+
+  private static final SimpleDateFormat ISO_8601 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
+
   @Test
   public void testParse() throws URISyntaxException, XPathExpressionException, FileNotFoundException, IOException, ParserConfigurationException, SAXException {
     EMRXMLParser<FVCData> parser = new EMRXMLParser<FVCData>();
@@ -53,7 +57,7 @@ public class EMRXMLParserTest {
 
     FVCData tData = parser.getTestData();
     Assert.assertEquals("FVC", tData.getType());
-    Assert.assertEquals("Wed Jul 27 11:14:55 EDT 2011", tData.getDate().toString());
+    Assert.assertEquals("2011-07-27T11:14:55.281", ISO_8601.format(tData.getDate()));
     Assert.assertEquals("D1", tData.getQualityGrade());
 
     Map<String, Number> results = tData.getBestResults();
@@ -125,7 +129,7 @@ public class EMRXMLParserTest {
     Assert.assertTrue(results.containsKey("MTCR"));
 
     Assert.assertEquals(2, tData.getTrials().size());
-    Assert.assertEquals("Wed Jul 27 11:15:14 EDT 2011", tData.getTrials().get(0).getDate().toString());
+    Assert.assertEquals("2011-07-27T11:15:14.937", ISO_8601.format(tData.getTrials().get(0).getDate()));
     Assert.assertEquals(new Long(1), tData.getTrials().get(0).getRank());
 
     results = tData.getTrials().get(0).getResults();
