@@ -305,4 +305,28 @@
 
   </distributionManagement>
 
+  <scm>
+    <connection>scm:git:git://github.com/obiba/onyx-instruments.git</connection>
+    <developerConnection>scm:git:https://github.com/obiba/onyx-instruments.git</developerConnection>
+    <url>https://github.com/obiba/onyx-instruments</url>
+  </scm>
+
+  <issueManagement>
+    <system>JIRA</system>
+    <url>http://jira.obiba.org</url>
+  </issueManagement>
+
+  <ciManagement>
+    <system>Jenkins</system>
+    <url>http://ci.obiba.org/view/Onyx/job/Onyx%20Instruments</url>
+  </ciManagement>
+
+  <mailingLists>
+    <mailingList>
+      <name>OBiBa Users</name>
+      <post>obiba-users@googlegroups.com</post>
+      <archive>https://groups.google.com/forum/?fromgroups#!forum/obiba-users</archive>
+    </mailingList>
+  </mailingLists>
+
 </project>
