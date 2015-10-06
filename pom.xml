@@ -39,8 +39,15 @@
 
     <easymock.version>3.4</easymock.version>
     <junit.version>4.12</junit.version>
+    <onyx.version>1.10-SNAPSHOT</onyx.version>
     <slf4j.version>1.7.12</slf4j.version>
     <spring.version>4.2.1.RELEASE</spring.version>
+
+    <!-- maven plugins -->
+    <maven-buildnumber-plugin.version>1.2</maven-buildnumber-plugin.version>
+    <maven-dependency-plugin.version>2.1</maven-dependency-plugin.version>
+    <maven-jar-plugin.version>2.4</maven-jar-plugin.version>
+    <maven-source-plugin.version>2.2</maven-source-plugin.version>
   </properties>
 
   <dependencyManagement>
@@ -48,31 +55,24 @@
       <dependency>
         <groupId>org.obiba.jade.instrument</groupId>
         <artifactId>instrument-bootstrap</artifactId>
-        <version>${project.version}</version>
+        <version>${onyx.version}</version>
         <scope>provided</scope>
       </dependency>
       <dependency>
         <groupId>org.obiba.onyx</groupId>
         <artifactId>onyx-util</artifactId>
-        <version>${project.version}</version>
+        <version>${onyx.version}</version>
       </dependency>
       <dependency>
         <groupId>org.obiba.onyx</groupId>
         <artifactId>onyx-core</artifactId>
-        <version>${project.version}</version>
-        <scope>provided</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.obiba.jade.instrument</groupId>
-        <artifactId>instrument-bootstrap</artifactId>
-        <version>${project.version}</version>
+        <version>${onyx.version}</version>
         <scope>provided</scope>
       </dependency>
       <dependency>
         <groupId>org.springframework</groupId>
         <artifactId>spring-jdbc</artifactId>
         <version>${spring.version}</version>
-        <scope>provided</scope>
         <exclusions>
           <exclusion>
             <groupId>commons-logging</groupId>
@@ -195,6 +195,65 @@
         </plugin>
       </plugins>
     </pluginManagement>
+
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>buildnumber-maven-plugin</artifactId>
+        <version>${maven-buildnumber-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>createBuildNumber</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>create</goal>
+            </goals>
+            <configuration>
+              <format>{0,date,yyyyMMddHHmmss}</format>
+              <items>
+                <item>timestamp</item>
+              </items>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>${maven-jar-plugin.version}</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+            </manifest>
+            <manifestEntries>
+              <Implementation-Build>${buildNumber}</Implementation-Build>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <artifactId>maven-source-plugin</artifactId>
+        <version>${maven-source-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>${maven-dependency-plugin.version}</version>
+      </plugin>
+    </plugins>
   </build>
 
   <repositories>

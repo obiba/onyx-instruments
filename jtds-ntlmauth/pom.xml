@@ -29,6 +29,8 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
+        <extensions>false</extensions>
+        <inherited>true</inherited>
         <configuration>
           <archive>
             <manifest>
@@ -43,14 +45,6 @@
               <Application-Library-Allowable-Codebase>*</Application-Library-Allowable-Codebase>
             </manifestEntries>
           </archive>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <extensions>false</extensions>
-        <inherited>true</inherited>
-        <configuration>
           <classifier>win32</classifier>
         </configuration>
       </plugin>

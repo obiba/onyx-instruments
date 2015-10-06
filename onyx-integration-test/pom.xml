@@ -13,7 +13,16 @@
     <groupId>org.obiba.onyx</groupId>
     <artifactId>onyx-deploy-parent</artifactId>
     <version>1.10-SNAPSHOT</version>
+    <relativePath></relativePath>
   </parent>
+
+  <properties>
+    <maven.compiler.target>1.7</maven.compiler.target>
+    <maven.compiler.source>1.7</maven.compiler.source>
+    <project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
+
+    <onyx-instruments.version>1.10-SNAPSHOT</onyx-instruments.version>
+  </properties>
 
   <dependencies>
     <dependency>
@@ -63,7 +72,7 @@
     <dependency>
       <groupId>org.obiba.jade.instrument</groupId>
       <artifactId>interface-bioimpedance-tanita-bc418</artifactId>
-      <version>${project.version}</version>
+      <version>${onyx-instruments.version}</version>
       <type>zip</type>
       <scope>provided</scope>
     </dependency>
@@ -71,7 +80,7 @@
     <dependency>
       <groupId>org.obiba.jade.instrument</groupId>
       <artifactId>interface-bioimpedance-tanita-tbf310</artifactId>
-      <version>${project.version}</version>
+      <version>${onyx-instruments.version}</version>
       <type>zip</type>
       <scope>provided</scope>
     </dependency>
@@ -79,7 +88,7 @@
     <dependency>
       <groupId>org.obiba.jade.instrument</groupId>
       <artifactId>interface-anklebrachial-summitdoppler-vantageabi</artifactId>
-      <version>${project.version}</version>
+      <version>${onyx-instruments.version}</version>
       <type>zip</type>
       <scope>provided</scope>
     </dependency>
@@ -87,7 +96,7 @@
     <dependency>
       <groupId>org.obiba.jade.instrument</groupId>
       <artifactId>interface-arterialstiffness</artifactId>
-      <version>${project.version}</version>
+      <version>${onyx-instruments.version}</version>
       <type>zip</type>
       <scope>provided</scope>
     </dependency>
@@ -95,7 +104,7 @@
     <dependency>
       <groupId>org.obiba.jade.instrument</groupId>
       <artifactId>interface-bonedensity</artifactId>
-      <version>${project.version}</version>
+      <version>${onyx-instruments.version}</version>
       <type>zip</type>
       <scope>provided</scope>
     </dependency>
@@ -103,7 +112,7 @@
     <dependency>
       <groupId>org.obiba.jade.instrument</groupId>
       <artifactId>interface-bonedensity-holologic-apex</artifactId>
-      <version>${project.version}</version>
+      <version>${onyx-instruments.version}</version>
       <type>zip</type>
       <scope>provided</scope>
     </dependency>
@@ -111,7 +120,7 @@
     <dependency>
       <groupId>org.obiba.jade.instrument</groupId>
       <artifactId>interface-ecg</artifactId>
-      <version>${project.version}</version>
+      <version>${onyx-instruments.version}</version>
       <type>zip</type>
       <scope>provided</scope>
     </dependency>
@@ -119,7 +128,7 @@
     <dependency>
       <groupId>org.obiba.jade.instrument</groupId>
       <artifactId>interface-ecg-cardiosoft-mac800</artifactId>
-      <version>${project.version}</version>
+      <version>${onyx-instruments.version}</version>
       <type>zip</type>
       <scope>provided</scope>
     </dependency>
@@ -127,7 +136,7 @@
     <dependency>
       <groupId>org.obiba.jade.instrument</groupId>
       <artifactId>interface-spirometry</artifactId>
-      <version>${project.version}</version>
+      <version>${onyx-instruments.version}</version>
       <type>zip</type>
       <scope>provided</scope>
     </dependency>
@@ -135,7 +144,7 @@
     <dependency>
       <groupId>org.obiba.jade.instrument</groupId>
       <artifactId>interface-spirometry-ndd-easyonpc</artifactId>
-      <version>${project.version}</version>
+      <version>${onyx-instruments.version}</version>
       <type>zip</type>
       <scope>provided</scope>
     </dependency>
@@ -143,7 +152,7 @@
     <dependency>
       <groupId>org.obiba.jade.instrument</groupId>
       <artifactId>interface-noddletest</artifactId>
-      <version>${project.version}</version>
+      <version>${onyx-instruments.version}</version>
       <type>zip</type>
       <scope>provided</scope>
     </dependency>
@@ -151,7 +160,7 @@
     <dependency>
       <groupId>org.obiba.jade.instrument</groupId>
       <artifactId>interface-bloodpressure-vsm-bptru</artifactId>
-      <version>${project.version}</version>
+      <version>${onyx-instruments.version}</version>
       <type>zip</type>
       <scope>provided</scope>
     </dependency>
@@ -159,7 +168,7 @@
     <dependency>
       <groupId>org.obiba.jade.instrument</groupId>
       <artifactId>interface-gripstrength-jtech</artifactId>
-      <version>${project.version}</version>
+      <version>${onyx-instruments.version}</version>
       <type>zip</type>
       <scope>provided</scope>
     </dependency>
@@ -167,7 +176,7 @@
     <dependency>
       <groupId>org.obiba.jade.instrument</groupId>
       <artifactId>interface-weight-ricelake-140-10</artifactId>
-      <version>${project.version}</version>
+      <version>${onyx-instruments.version}</version>
       <type>zip</type>
       <scope>provided</scope>
     </dependency>
@@ -175,7 +184,7 @@
     <dependency>
       <groupId>org.obiba.jade.instrument</groupId>
       <artifactId>interface-audiogram-tremetrics-ra300</artifactId>
-      <version>${project.version}</version>
+      <version>${onyx-instruments.version}</version>
       <type>zip</type>
       <scope>provided</scope>
     </dependency>
@@ -183,7 +192,7 @@
     <dependency>
       <groupId>org.obiba.jade.instrument</groupId>
       <artifactId>interface-retinal-topcon-imagenetr4lite</artifactId>
-      <version>${project.version}</version>
+      <version>${onyx-instruments.version}</version>
       <type>zip</type>
       <scope>provided</scope>
     </dependency>
@@ -191,7 +200,7 @@
     <dependency>
       <groupId>org.obiba.jade.instrument</groupId>
       <artifactId>interface-ge-vivid-i</artifactId>
-      <version>${project.version}</version>
+      <version>${onyx-instruments.version}</version>
       <type>zip</type>
       <scope>provided</scope>
     </dependency>
@@ -200,18 +209,6 @@
       <groupId>org.obiba.commons</groupId>
       <artifactId>obiba-security</artifactId>
     </dependency>
-
-    <!--<dependency>-->
-      <!--<groupId>com.atlassian.crowd</groupId>-->
-      <!--<artifactId>crowd-integration-client</artifactId>-->
-      <!--<version>2.5.1</version>-->
-    <!--</dependency>-->
-    <!--&lt;!&ndash; Need to define this manually because of Maven bug &ndash;&gt;-->
-    <!--<dependency>-->
-      <!--<groupId>org.codehaus.xfire</groupId>-->
-      <!--<artifactId>xfire-aegis</artifactId>-->
-      <!--<version>1.2.6</version>-->
-    <!--</dependency>-->
 
   </dependencies>
 
