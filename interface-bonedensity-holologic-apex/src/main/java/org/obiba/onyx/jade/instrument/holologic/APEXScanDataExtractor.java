@@ -475,8 +475,14 @@ public abstract class APEXScanDataExtractor {
         ethnicity = " AND ETHNIC = 'B'";
       } else if(ethnicity.equals("H") && !type.equals("R")) {
         ethnicity = " AND ETHNIC = 'H'";
-      } else if(0 == ethnicity.length() || ethnicity.equals("O") || ethnicity.equals("P") || ethnicity.equals("I")) {
+      } else if(0 == ethnicity.length() ||
+                ethnicity.equals("W") ||
+                ethnicity.equals("O") ||
+                ethnicity.equals("P") ||
+                ethnicity.equals("I")) {
         ethnicity = " AND ETHNIC IS NULL";
+      } else {
+        ethnicity = " AND ETHNIC = '" + ethnicity + '"';
       }
 
       sql = "SELECT UNIQUE_ID, AGE_YOUNG FROM ReferenceCurve";
