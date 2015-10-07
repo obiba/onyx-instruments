@@ -629,7 +629,11 @@ public abstract class APEXScanDataExtractor {
             String dcmBodyPart = dicomObject.getString(Tag.BodyPartExamined);
             String dcmSide = dicomObject.getString(Tag.Laterality);
 
-            if(bodyPartName.equals("LSPINE")) {
+            if(null == bodyPartName){
+              if(dcmBodyPartKey && null == dcmSide) {
+                selectList.add(sdf);
+              }
+            } else if(bodyPartName.equals("LSPINE")) {
               if(dcmBodyPartKey) {
                 if(bodyPartName.equals(dcmBodyPart) && 16 == dcmBitsAllocated) selectList.add(sdf);
               } else {
@@ -647,10 +651,6 @@ public abstract class APEXScanDataExtractor {
               if(dcmBodyPartKey) {
                 if(bodyPartName.equals(dcmBodyPart) && null != dcmSide) selectList.add(sdf);
               }
-            } else {
-              if(dcmBodyPartKey && null == dcmSide) {
-                selectList.add(sdf);
-              }
             }
           } catch(IOException e) {
             throw new RuntimeException(e);
@@ -659,8 +659,16 @@ public abstract class APEXScanDataExtractor {
 
         if(!selectList.isEmpty()) {
 
+          // Whole Body
+          if(null == bodyPartName && 2 == selectList.size()) {
+            data.put(getResultPrefix() + "_SCANID", DataBuilder.buildText(scanID));
+            data.put(getResultPrefix() + "_SCAN_MODE", DataBuilder.buildText(scanMode));
+
+            log.info("processing whole body dicom");
+            processFilesExtractionWB(selectList, data);
+          }
           // Forearm
-          if("ARM".equals(bodyPartName) && 2 >= selectList.size()) {
+          else if("ARM".equals(bodyPartName) && 2 >= selectList.size()) {
             data.put(getResultPrefix() + "_SCANID", DataBuilder.buildText(scanID));
             data.put(getResultPrefix() + "_SCAN_MODE", DataBuilder.buildText(scanMode));
 
@@ -690,14 +698,6 @@ public abstract class APEXScanDataExtractor {
 
             log.info("processing hip dicom side: " + getSide().toString());
             processFilesExtractionHip(getSide(), selectList, data);
-          }
-          // Whole Body
-          else if(null == bodyPartName && 2 == selectList.size()) {
-            data.put(getResultPrefix() + "_SCANID", DataBuilder.buildText(scanID));
-            data.put(getResultPrefix() + "_SCAN_MODE", DataBuilder.buildText(scanMode));
-
-            log.info("processing whole body dicom");
-            processFilesExtractionWB(selectList, data);
           }
         }
       }
