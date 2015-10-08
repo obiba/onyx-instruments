@@ -492,6 +492,7 @@ public abstract class APEXScanDataExtractor {
       sql += ethnicity;
       sql += " AND METHOD IS NULL";
       sql += " AND SOURCE LIKE '%" + getRefSource() + "%'";
+      sql += " AND Y_LABEL = 'IDS_REF_LBL_BMD'";
       sql += " AND BONERANGE ";
       sql += (ranges.get(bmdBoneRangeKey).equals("NULL") ? ("IS NULL") : ("= '" + ranges.get(bmdBoneRangeKey) + "'"));
 
