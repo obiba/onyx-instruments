@@ -163,7 +163,11 @@ public abstract class APEXScanDataExtractor {
       log.info("getting data from concrete impl of extractDataImp");
       extractDataImpl(data);
       log.info("getting TZscores... ");
-      computeTZScore(data);
+      try {
+        computeTZScore(data);
+      } catch(ParseException e) {
+        log.info("failed to parse dates");
+      }
     }
 
     log.info("returning data with " + Integer.toString(data.size()) + " entries");
@@ -176,7 +180,7 @@ public abstract class APEXScanDataExtractor {
    */
   private Map<String, Data> extractScanAnalysisData() {
     log.info("extractscananalysisdata: " + getParticipantKey() + ", " + Long.toString(getScanType()));
-    return patScanDb.query("select SCANID, SCAN_MODE, SCAN_DATE from ScanAnalysis where PATIENT_KEY = ? and SCAN_TYPE = ?", new PreparedStatementSetter() {
+    return patScanDb.query("SELECT SCANID, SCAN_MODE, SCAN_DATE FROM ScanAnalysis WHERE PATIENT_KEY = ? AND SCAN_TYPE = ?", new PreparedStatementSetter() {
       public void setValues(PreparedStatement ps) throws SQLException {
         ps.setString(1, getParticipantKey());
         ps.setString(2, Long.toString(getScanType()));
@@ -196,7 +200,7 @@ public abstract class APEXScanDataExtractor {
    *
    * @param data
    */
-  protected void computeTZScore(Map<String, Data> data) throws DataAccessException, IllegalArgumentException {
+  protected void computeTZScore(Map<String, Data> data) throws DataAccessException, IllegalArgumentException, ParseException {
 
     if(null == data || data.isEmpty()) return;
 
@@ -336,6 +340,20 @@ public abstract class APEXScanDataExtractor {
     log.info(prefix + " data contains: " + Integer.toString(data.size()) + " possible entries to get bmd values from");
     log.info(prefix + " bmddata contains: " + Integer.toString(bmdData.size()) + " entries to get tz");
 
+    DecimalFormat format = new DecimalFormat("#.0");
+    ageBracket bracket = new ageBracket();
+
+    // Determine the participant's age (at the time of the scan).
+    //
+    Double age = null;
+    try {
+      age = computeYearsDifference(getScanDate(), getParticipantDOB());
+    } catch(ParseException e) {
+      throw e;
+    }
+
+    log.info("computed age from scandate and dob: " + age.toString() );
+
     for(Map.Entry<String, Double> entry : bmdData.entrySet()) {
       String bmdBoneRangeKey = entry.getKey();
       Double bmdValue = entry.getValue();
@@ -350,15 +368,22 @@ public abstract class APEXScanDataExtractor {
       // and gender is always female in accordance with WHO and
       // Osteoporosis Canada guidelines.
       //
+      String method = " AND METHOD IS NULL";
+      if(type.equals("S") &&
+         (bmdBoneRangeKey.contains("L1_") || bmdBoneRangeKey.contains("L4_"))) {
+        method = " AND METHOD = 'APEX'";
+      }
+
       String sql = "SELECT UNIQUE_ID, AGE_YOUNG FROM ReferenceCurve";
       sql += " WHERE REFTYPE = '" + type + "'";
-      sql += " AND IF_CURRENT = 1 AND SEX = 'F' AND ETHNIC IS NULL AND METHOD IS NULL";
+      sql += " AND IF_CURRENT = 1 AND SEX = 'F' AND ETHNIC IS NULL";
+      sql += method;
       sql += " AND SOURCE LIKE '%" + source + "%'";
       sql += " AND Y_LABEL = 'IDS_REF_LBL_BMD'";
       sql += " AND BONERANGE ";
       sql += (ranges.get(bmdBoneRangeKey).equals("NULL") ? ("IS NULL") : ("= '" + ranges.get(bmdBoneRangeKey) + "'"));
 
-      log.info("first query: " + sql);
+      log.info("first query (T score): " + sql);
       Map<String, Object> mapResult;
       try {
         mapResult = refCurveDb.queryForMap(sql);
@@ -368,69 +393,33 @@ public abstract class APEXScanDataExtractor {
       String curveId = mapResult.get("UNIQUE_ID").toString();
       Double ageYoung = new Double(mapResult.get("AGE_YOUNG").toString());
 
-      // Determine the age values (X axis variable) of the curve
+      // Determine the bmd, skewness factor and standard deviation
+      // at the peak bmd age value.
       //
-      List<Double> ageTable = new ArrayList<Double>();
-      sql = "SELECT X_VALUE FROM Points WHERE UNIQUE_ID = " + curveId;
+      sql = "SELECT Y_VALUE, L_VALUE, STD FROM Points WHERE UNIQUE_ID = " + curveId;
+      sql += " AND X_VALUE = " + ageYoung;
 
-      log.info("second query: " + sql);
+      log.info("second query (T score): " + sql);
 
-      List<Map<String, Object>> listResult;
+      mapResult.clear();
       try {
-        listResult = refCurveDb.queryForList(sql);
+        mapResult = refCurveDb.queryForMap(sql);
       } catch(DataAccessException e) {
         throw e;
       }
-      for(Map<String, Object> row : listResult) {
-        ageTable.add(new Double(row.get("X_VALUE").toString()));
-      }
 
-      // Determine the discrete age values that bracket the
-      // participant's age (at the time of the scan).
-      //
-      Double age = null;
-      try {
-        age = computeYearsDifference(getScanDate(), getParticipantDOB());
-      } catch(ParseException e) {
-      }
-
-      log.info("computed age from scandate and dob: " + age.toString() );
-
-      ageBracket bracket = new ageBracket();
-      bracket.compute(age, ageTable);
-
-      // Determine the bmd, skewness factor and standard deviation
-      // at the bracketing and peak bmd age values.
-      //
       List<Double> bmdValues = new ArrayList<Double>();
+      bmdValues.add(new Double(mapResult.get("Y_VALUE").toString()));
+      bmdValues.add(new Double(mapResult.get("L_VALUE").toString()));
+      bmdValues.add(new Double(mapResult.get("STD").toString()));
 
-      sql = "SELECT Y_VALUE, L_VALUE, STD FROM Points WHERE UNIQUE_ID = " + curveId;
-      sql += " AND X_VALUE = ";
-
-      Double[] x_value_array = { bracket.ageMin, bracket.ageMax, ageYoung };
-      for(int i = 0; i < x_value_array.length; i++) {
-        mapResult.clear();
-        log.info("third query iter " + ((Integer) i).toString() + " : " + sql + x_value_array[i].toString());
-
-        try {
-          mapResult = refCurveDb.queryForMap(sql + x_value_array[i].toString());
-        } catch(DataAccessException e) {
-          throw e;
-        }
-
-        bmdValues.add(new Double(mapResult.get("Y_VALUE").toString()));
-        bmdValues.add(new Double(mapResult.get("L_VALUE").toString()));
-        bmdValues.add(new Double(mapResult.get("STD").toString()));
-      }
-
-      DecimalFormat df = new DecimalFormat("#.0");
       Double X_value = bmdValue;
-      Double M_value = bmdValues.get(6);
-      Double L_value = bmdValues.get(7);
-      Double sigma = bmdValues.get(8);
+      Double M_value = bmdValues.get(0);
+      Double L_value = bmdValues.get(1);
+      Double sigma = bmdValues.get(2);
 
       Double T_score = M_value * (Math.pow(X_value / M_value, L_value) - 1.) / (L_value * sigma);
-      T_score = Double.valueOf(df.format(T_score));
+      T_score = Double.valueOf(format.format(T_score));
       if(0. == Math.abs(T_score)) T_score = 0.;
 
       String varName = getResultPrefix() + "_";
@@ -468,21 +457,20 @@ public abstract class APEXScanDataExtractor {
         gender = " AND SEX = 'M'";
       }
 
-      // APEX reference curve db has no 1/3 distal radius data for black ethnicity and no forearm data for hispanic ethnicity
+      // APEX reference curve db has no forearm data for black or hispanic ethnicity
       //
-      String ethnicity = getParticipantEthnicity().toUpperCase();
-      if(ethnicity.equals("B") && !(type.equals("R") && bmdBoneRangeKey.equals("R.."))) {
-        ethnicity = " AND ETHNIC = 'B'";
-      } else if(ethnicity.equals("H") && !type.equals("R")) {
-        ethnicity = " AND ETHNIC = 'H'";
-      } else if(0 == ethnicity.length() ||
-                ethnicity.equals("W") ||
-                ethnicity.equals("O") ||
-                ethnicity.equals("P") ||
-                ethnicity.equals("I")) {
+      String ethnicity = getParticipantEthnicity();
+      if(null == ethnicity) ethnicity = "";
+      ethnicity.toUpperCase();
+      if(0 == ethnicity.length() ||
+           ethnicity.equals("W") ||
+           ethnicity.equals("O") ||
+           ethnicity.equals("P") ||
+           ethnicity.equals("I") ||
+           (type.equals("R") && ethnicity.equals("H")) || ethnicity.equals("B")) {
         ethnicity = " AND ETHNIC IS NULL";
       } else {
-        ethnicity = " AND ETHNIC = '" + ethnicity + '"';
+        ethnicity = " AND ETHNIC = '" + ethnicity + "'";
       }
 
       sql = "SELECT UNIQUE_ID, AGE_YOUNG FROM ReferenceCurve";
@@ -490,7 +478,7 @@ public abstract class APEXScanDataExtractor {
       sql += " AND IF_CURRENT = 1";
       sql += gender;
       sql += ethnicity;
-      sql += " AND METHOD IS NULL";
+      sql += method;
       sql += " AND SOURCE LIKE '%" + getRefSource() + "%'";
       sql += " AND Y_LABEL = 'IDS_REF_LBL_BMD'";
       sql += " AND BONERANGE ";
@@ -504,7 +492,6 @@ public abstract class APEXScanDataExtractor {
         throw e;
       }
       curveId = mapResult.get("UNIQUE_ID").toString();
-      ageYoung = new Double(mapResult.get("AGE_YOUNG").toString());
 
       // Determine the age values (X axis variable) of the curve
       //
@@ -512,12 +499,13 @@ public abstract class APEXScanDataExtractor {
 
       log.info("second query (Z score): " + sql);
 
+      List<Map<String, Object>> listResult;
       try {
         listResult = refCurveDb.queryForList(sql);
       } catch(DataAccessException e) {
         throw e;
       }
-      ageTable.clear();
+      List<Double> ageTable = new ArrayList<Double>();
       for(Map<String, Object> row : listResult) {
         ageTable.add(new Double(row.get("X_VALUE").toString()));
       }
@@ -531,12 +519,12 @@ public abstract class APEXScanDataExtractor {
         sql = "SELECT Y_VALUE, L_VALUE, STD FROM Points WHERE UNIQUE_ID = " + curveId;
         sql += " AND X_VALUE = ";
 
-        x_value_array = new Double[]{ bracket.ageMin, bracket.ageMax, ageYoung };
+        Double[] x_value_array = {bracket.ageMin, bracket.ageMax};
         bmdValues.clear();
         for(int i = 0; i < x_value_array.length; i++) {
-          mapResult.clear();
-          log.info("third query iter (Z score) " + ((Integer) i).toString() + " : " + sql + x_value_array[i].toString());
+          log.info("third query (Z score) iter " + ((Integer) i).toString() + " : " + sql + x_value_array[i].toString());
 
+          mapResult.clear();
           try {
             mapResult = refCurveDb.queryForMap(sql + x_value_array[i].toString());
           } catch(DataAccessException e) {
@@ -549,10 +537,8 @@ public abstract class APEXScanDataExtractor {
         }
 
         Double u = (age - bracket.ageMin) / bracket.ageSpan;
-
         List<Double> interpValues = new ArrayList<Double>();
-        interpValues.clear();
-        for(int i = 0; i < bmdValues.size() / 3; i++)
+        for(int i = 0; i < bmdValues.size() / 2; i++)
           interpValues.add((1. - u) * bmdValues.get(i) + u * bmdValues.get(i + 3));
 
         M_value = interpValues.get(0);
@@ -560,7 +546,7 @@ public abstract class APEXScanDataExtractor {
         sigma = interpValues.get(2);
 
         Z_score = M_value * (Math.pow(X_value / M_value, L_value) - 1.) / (L_value * sigma);
-        Z_score = Double.valueOf(df.format(Z_score));
+        Z_score = Double.valueOf(format.format(Z_score));
         if(0. == Math.abs(Z_score)) Z_score = 0.;
       }
 
@@ -929,9 +915,20 @@ public abstract class APEXScanDataExtractor {
    * @throws ParseException
    */
   public static Double computeYearsDifference(String s1, String s2) throws ParseException {
-    SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    Date d1 = df.parse(s1);
-    Date d2 = df.parse(s2);
+    SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+    Date d1;
+    try {
+      d1 = format.parse(s1);
+    } catch(ParseException e) {
+      throw e;
+    }
+    Date d2;
+    try {
+      d2 = format.parse(s2);
+    } catch(ParseException e) {
+      throw e;
+    }
 
     Calendar c1 = Calendar.getInstance();
     c1.setTime(d1);
