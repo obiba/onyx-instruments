@@ -80,7 +80,7 @@ public class APEXInstrumentRunner implements InstrumentRunner {
 
     try {
       File tmpDir = File.createTempFile("dcm", "");
-      if(tmpDir.delete() == false || tmpDir.mkdir() == false) {
+      if(false == tmpDir.delete() || false == tmpDir.mkdir()) {
         throw new RuntimeException("Cannot create temp directory");
       }
       dcmDir = tmpDir;
@@ -191,7 +191,7 @@ public class APEXInstrumentRunner implements InstrumentRunner {
         }
       }
     }
-    if(missing.isEmpty() == false) {
+    if(false == missing.isEmpty()) {
       log.info("Missing variables: " + missing);
     }
     return retValue;
@@ -212,11 +212,15 @@ public class APEXInstrumentRunner implements InstrumentRunner {
     String sql = "SELECT PATIENT_KEY, BIRTHDATE, SEX, ETHNICITY FROM PATIENT WHERE IDENTIFIER1 = ?";
     try {
       Map<String, Object> results = patScanDb.queryForMap(sql, new Object[] { participantID });
-      if(results != null) {
+      if(null != results) {
         participantData.put("participantKey", results.get("PATIENT_KEY").toString());
         participantData.put("participantDOB", results.get("BIRTHDATE").toString());
         participantData.put("participantGender", results.get("SEX").toString());
-        participantData.put("participantEthnicity", results.get("ETHNICITY").toString());
+        String ethnicity = "W";
+        if(results.containsKey("ETHNICITY") && null != results.get("ETHNICITY")) {
+          ethnicity = results.get("ETHNICITY").toString();
+        }
+        participantData.put("participantEthnicity", ethnicity);
       }
     } catch(DataAccessException e) {
       log.info("Cannot find the requested participant in Apex: " + sql );
@@ -228,7 +232,7 @@ public class APEXInstrumentRunner implements InstrumentRunner {
       String hipSide = instrumentExecutionService.getInputParameterValue("HipSide").getValue();
       log.info("hipSide: " + hipSide);
       log.info("expected: " + instrumentExecutionService.getExpectedMeasureCount());
-      if(hipSide != null) {
+      if(null != hipSide) {
         if(hipSide.toUpperCase().startsWith("L")) {
           extractLeftHip(dataList);
         } else if(hipSide.toUpperCase().startsWith("R")) {
@@ -255,7 +259,7 @@ public class APEXInstrumentRunner implements InstrumentRunner {
     log.info("forearm block in runner start");
     if(instrumentExecutionService.hasInputParameter("ForearmSide")) {
       String forearmSide = instrumentExecutionService.getInputParameterValue("ForearmSide").getValue();
-      if(forearmSide != null) {
+      if(null != forearmSide) {
         if(forearmSide.toUpperCase().startsWith("L")) {
           extractScanData(dataList, new ForearmScanDataExtractor(patScanDb, refCurveDb, participantData, Side.LEFT, server, apexReceiver) {
             @Override
