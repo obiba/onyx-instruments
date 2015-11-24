@@ -39,7 +39,7 @@
 
     <easymock.version>3.4</easymock.version>
     <junit.version>4.12</junit.version>
-    <onyx.version>1.10-SNAPSHOT</onyx.version>
+    <onyx.version>1.10.0</onyx.version>
     <slf4j.version>1.7.12</slf4j.version>
     <spring.version>4.2.1.RELEASE</spring.version>
 
@@ -118,18 +118,18 @@
     <dependency>
       <groupId>org.obiba.onyx</groupId>
       <artifactId>onyx-util</artifactId>
-      <version>${project.version}</version>
+      <version>${onyx.version}</version>
     </dependency>
     <dependency>
       <groupId>org.obiba.onyx</groupId>
       <artifactId>onyx-core</artifactId>
-      <version>${project.version}</version>
+      <version>${onyx.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.obiba.jade.instrument</groupId>
       <artifactId>instrument-bootstrap</artifactId>
-      <version>${project.version}</version>
+      <version>${onyx.version}</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>

@@ -12,8 +12,7 @@
   <parent>
     <groupId>org.obiba.onyx</groupId>
     <artifactId>onyx-deploy-parent</artifactId>
-    <version>1.10-SNAPSHOT</version>
-    <relativePath></relativePath>
+    <version>1.10.0</version>
   </parent>
 
   <properties>
@@ -430,5 +429,19 @@
     </resources>
 
   </build>
+
+  <repositories>
+    <repository>
+      <id>obiba.org</id>
+      <name>Obiba Maven 2.x Repository</name>
+      <url>http://repo.obiba.org/repo</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
 
 </project>
