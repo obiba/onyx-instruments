@@ -63,6 +63,7 @@
         <groupId>org.obiba.onyx</groupId>
         <artifactId>onyx-util</artifactId>
         <version>${onyx.version}</version>
+        <scope>provided</scope>
       </dependency>
       <dependency>
         <groupId>org.obiba.onyx</groupId>
@@ -120,6 +121,7 @@
       <groupId>org.obiba.onyx</groupId>
       <artifactId>onyx-util</artifactId>
       <version>${onyx.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.obiba.onyx</groupId>
