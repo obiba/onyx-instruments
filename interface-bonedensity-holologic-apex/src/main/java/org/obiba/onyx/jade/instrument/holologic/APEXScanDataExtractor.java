@@ -628,7 +628,7 @@ public abstract class APEXScanDataExtractor {
               }
             } else if(bodyPartName.equals("SPINE")) {
               if(dcmBodyPartKey) {
-                if(dcmBodyPart.endsWith(bodyPartName) && 8 == dcmBitsAllocated) selectList.add(sdf);
+                if(null != dcmBodyPart && dcmBodyPart.endsWith(bodyPartName) && 8 == dcmBitsAllocated) selectList.add(sdf);
               }
             } else if(bodyPartName.equals("ARM")) {
               if(dcmBodyPartKey) {
