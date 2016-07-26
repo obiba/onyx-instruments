@@ -41,6 +41,12 @@ public class EMRXMLParserTest {
 
     parser.parse(new FileInputStream(file), new FVCDataExtractor());
 
+
+    CommandData commandData = parser.getCommandData();
+    Assert.assertEquals("TestResults", commandData.getType());
+    Assert.assertArrayEquals(new String[] {"c:\\tmp\\output.pdf"}, commandData.getParameters().values().toArray());
+    Assert.assertArrayEquals(new String[] {"Attachment"}, commandData.getParameters().keySet().toArray());
+
     ParticipantData pData = parser.getParticipantData();
     Assert.assertNotNull(pData);
     Assert.assertEquals("CLSA-2", pData.getIdentifier());
