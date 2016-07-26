@@ -18,7 +18,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -48,6 +47,8 @@ public class EMRXMLParser<T extends TestData<?>> {
 
   private T testData;
 
+  private CommandData commandData;
+
   public EMRXMLParser() {
     super();
   }
@@ -64,6 +65,7 @@ public class EMRXMLParser<T extends TestData<?>> {
     xpath = factory.newXPath();
 
     try {
+      commandData = new CommandDataExtractor(xpath, doc).extractData();
       ParticipantDataExtractor pExtractor = new ParticipantDataExtractor(xpath, doc);
       participantData = pExtractor.extractData();
       testExtractor.init(xpath, doc);
@@ -97,5 +99,9 @@ public class EMRXMLParser<T extends TestData<?>> {
     transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
     transformer.transform(new DOMSource(doc), new StreamResult(buffer));
     return buffer.toString();
+  }
+
+  public CommandData getCommandData() {
+    return commandData;
   }
 }

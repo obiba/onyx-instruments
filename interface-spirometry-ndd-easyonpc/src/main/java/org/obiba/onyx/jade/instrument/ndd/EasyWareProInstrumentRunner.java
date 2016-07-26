@@ -229,6 +229,14 @@ public class EasyWareProInstrumentRunner implements InstrumentRunner {
         dataList.add(data);
       }
 
+      CommandData commandData = parser.getCommandData();
+
+      log.info("ndd result Command {} {}", commandData.getType(), commandData.getParameters());
+
+      if("TestResults".equals(commandData.getType()) && commandData.getParameters().containsKey("Attachment")) {
+        File file = new File(commandData.getParameters().get("Attachment"));
+        if (file.exists()) addOutput(data, "Attachment", DataBuilder.buildBinary(file));
+      }
     } catch(Exception e) {
       log.error("Unable to parse data from: " + outFile.getAbsolutePath(), e);
       retrieveDeviceDataError = true;

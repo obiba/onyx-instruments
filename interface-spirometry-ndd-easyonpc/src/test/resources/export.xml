@@ -1,6 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ndd xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Version="ndd.EasyWarePro.V1">
-  <Command />
+  <Command Type="TestResults">
+    <Parameter Name="Attachment">c:\tmp\output.pdf</Parameter>
+  </Command>
   <Patients>
     <Patient ID="CLSA-2">
       <LastName>Patate</LastName>
