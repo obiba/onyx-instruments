@@ -8,7 +8,7 @@
   <groupId>org.obiba.jade.instrument</groupId>
   <artifactId>onyx-instruments</artifactId>
   <packaging>pom</packaging>
-  <version>1.10-SNAPSHOT</version>
+  <version>1.10.2</version>
 
   <modules>
     <module>interface-anklebrachial-summitdoppler-vantageabi</module>
@@ -325,7 +325,7 @@
     <connection>scm:git:git://github.com/obiba/onyx-instruments.git</connection>
     <developerConnection>scm:git:https://github.com/obiba/onyx-instruments.git</developerConnection>
     <url>https://github.com/obiba/onyx-instruments</url>
-    <tag>HEAD</tag>
+    <tag>1.10.2</tag>
   </scm>
 
   <issueManagement>
