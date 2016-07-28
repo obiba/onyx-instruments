@@ -703,6 +703,13 @@
       <captureMethod>AUTOMATIC</captureMethod>
       <measurementUnit/>
     </output>
-    
+    <output>
+      <vendorName>Attachment</vendorName>
+      <code>RES_REPORT</code>
+      <dataType>DATA</dataType>
+      <mimeType>application/pdf</mimeType>
+      <captureMethod>AUTOMATIC</captureMethod>
+      <measurementUnit/>
+    </output>
   </instrumentParameters>
 </instrumentType>
