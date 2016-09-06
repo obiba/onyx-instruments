@@ -43,7 +43,7 @@ public class EMRXMLParserTest {
 
 
     CommandData commandData = parser.getCommandData();
-    Assert.assertEquals("TestResults", commandData.getType());
+    Assert.assertEquals("TestResult", commandData.getType());
     Assert.assertArrayEquals(new String[] {"c:\\tmp\\output.pdf"}, commandData.getParameters().values().toArray());
     Assert.assertArrayEquals(new String[] {"Attachment"}, commandData.getParameters().keySet().toArray());
 
