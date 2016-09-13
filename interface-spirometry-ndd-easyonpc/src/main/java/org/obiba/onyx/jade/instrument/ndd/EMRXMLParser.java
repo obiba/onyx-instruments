@@ -70,11 +70,11 @@ public class EMRXMLParser<T extends TestData<?>> {
       participantData = pExtractor.extractData();
       testExtractor.init(xpath, doc);
       testData = testExtractor.extractData();
-    } catch(RuntimeException e) {
+    } catch (RuntimeException e) {
       try {
         String debug = debugXmlFile();
         log.info("Error processing XML file: {}\n{}", e.getMessage(), debug);
-      } catch(Throwable t) {
+      } catch (Exception e1) {
         // ignore
       }
       throw e;

@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 public class EasyWareProInstrumentRunner implements InstrumentRunner {
 
   private static final Logger log = LoggerFactory.getLogger(EasyWareProInstrumentRunner.class);
+  private static final String ATTACHMENT = "Attachment";
 
   // Injected by spring.
   protected InstrumentExecutionService instrumentExecutionService;
@@ -87,23 +88,22 @@ public class EasyWareProInstrumentRunner implements InstrumentRunner {
 
       if(instrumentExecutionService.hasInputParameter("Gender")) {
         String gender = instrumentExecutionService.getInputParameterValue("Gender").getValue();
+
         if(gender.toUpperCase().startsWith("F")) {
           gender = "Female";
         } else {
           gender = "Male";
         }
+
         writer.print("        <Gender>" + gender + "</Gender>");
-      } else {
-        writer.print("        <Gender/>");
       }
 
       if(instrumentExecutionService.hasInputParameter("DateOfBirth")) {
         SimpleDateFormat birthDateFormatter = new SimpleDateFormat("yyyy-MM-dd");
         String dob = instrumentExecutionService.getDateAsString("DateOfBirth", birthDateFormatter);
         writer.print("        <DateOfBirth>" + dob + "</DateOfBirth>");
-      } else {
-        writer.print("        <DateOfBirth/>");
       }
+
       writer.print("        <ComputedDateOfBirth>false</ComputedDateOfBirth>");
 
       writeParameter(writer, "Height");
@@ -130,11 +130,11 @@ public class EasyWareProInstrumentRunner implements InstrumentRunner {
   private void writeParameter(PrintWriter writer, String name) {
     if(instrumentExecutionService.hasInputParameter(name)) {
       Data data = instrumentExecutionService.getInputParameterValue(name);
-      String value = data.getValue() != null ? data.getValueAsString() : "";
-      log.info(name + "=" + value);
-      writer.print("        <" + name + ">" + value + "</" + name + ">");
-    } else {
-      writer.print("        <" + name + "/>");
+      if (data.getValue() != null) {
+        String value = data.getValueAsString();
+        log.info(name + "=" + value);
+        writer.print("        <" + name + ">" + value + "</" + name + ">");
+      }
     }
   }
 
@@ -187,13 +187,13 @@ public class EasyWareProInstrumentRunner implements InstrumentRunner {
 
     File outFile = getOutFile();
     log.info("last modified date: {}", new Date(outFile.lastModified()));
+    log.info("data to be collected: {}", outVendorNames);
 
     try {
       EMRXMLParser<FVCData> parser = new EMRXMLParser<FVCData>();
       parser.parse(new FileInputStream(outFile), new FVCDataExtractor());
       Map<String, Data> data = new HashMap<String, Data>();
 
-      // participant data
       ParticipantData pData = parser.getParticipantData();
       addOutput(data, "HeightOut", DataBuilder.buildDecimal(pData.getHeight()));
       addOutput(data, "WeightOut", DataBuilder.buildDecimal(pData.getWeight()));
@@ -201,13 +201,17 @@ public class EasyWareProInstrumentRunner implements InstrumentRunner {
       addOutput(data, "AsthmaOut", DataBuilder.buildText(pData.getAsthma().toUpperCase()));
       addOutput(data, "SmokerOut", DataBuilder.buildText(pData.getSmoker().toUpperCase()));
       addOutput(data, "COPDOut", DataBuilder.buildText(pData.getCopd().toUpperCase()));
+
+      CommandData commandData = parser.getCommandData();
+      log.info("ndd result Command {} {}", commandData.getType(), commandData.getParameters());
+      addAttachmentOutput(data, commandData);
+
+      FVCData tData = parser.getTestData();
+      addOutput(data, "QUALITY_GRADE", DataBuilder.buildText(tData.getQualityGrade()));
+
       dataList.add(data);
 
-      // trial data
-      FVCData tData = parser.getTestData();
-
-      // Quality Grade data
-      addOutput(data, "QUALITY_GRADE", DataBuilder.buildText(tData.getQualityGrade()));
+      log.info("Adding {} trials", tData.getTrials().size());
 
       for(FVCTrialData trialData : tData.getTrials()) {
         data = new HashMap<String, Data>();
@@ -228,15 +232,6 @@ public class EasyWareProInstrumentRunner implements InstrumentRunner {
 
         dataList.add(data);
       }
-
-      CommandData commandData = parser.getCommandData();
-
-      log.info("ndd result Command {} {}", commandData.getType(), commandData.getParameters());
-
-      if("TestResult".equals(commandData.getType()) && commandData.getParameters().containsKey("Attachment")) {
-        File file = new File(commandData.getParameters().get("Attachment"));
-        if (file.exists()) addOutput(data, "Attachment", DataBuilder.buildBinary(file));
-      }
     } catch(Exception e) {
       log.error("Unable to parse data from: " + outFile.getAbsolutePath(), e);
       retrieveDeviceDataError = true;
@@ -244,6 +239,16 @@ public class EasyWareProInstrumentRunner implements InstrumentRunner {
     }
 
     return dataList;
+  }
+
+  private void addAttachmentOutput(Map<String, Data> data, CommandData commandData) {
+    if("TestResult".equals(commandData.getType()) && commandData.getParameters().containsKey(ATTACHMENT)) {
+      File file = new File(commandData.getParameters().get(ATTACHMENT));
+
+      if (file.exists()){
+        addOutput(data, ATTACHMENT, DataBuilder.buildBinary(file));
+      } else log.warn("Attachment file not found: {}", file.getAbsolutePath());
+    }
   }
 
   private void addOutput(Map<String, Data> data, String name, Data value) {
@@ -254,6 +259,7 @@ public class EasyWareProInstrumentRunner implements InstrumentRunner {
 
   private void sendDataToServer(Map<String, Data> data) {
     instrumentExecutionService.addOutputParameterValues(data);
+    log.info("Sent data: {}", data.keySet());
   }
 
   /**
