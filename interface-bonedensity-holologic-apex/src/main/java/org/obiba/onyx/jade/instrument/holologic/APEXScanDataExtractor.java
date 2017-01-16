@@ -467,7 +467,7 @@ public abstract class APEXScanDataExtractor {
            ethnicity.equals("O") ||
            ethnicity.equals("P") ||
            ethnicity.equals("I") ||
-           (type.equals("R") && ethnicity.equals("H")) || ethnicity.equals("B")) {
+           (type.equals("R") && (ethnicity.equals("H") || ethnicity.equals("B")))) {
         ethnicity = " AND ETHNIC IS NULL";
       } else {
         ethnicity = " AND ETHNIC = '" + ethnicity + "'";
