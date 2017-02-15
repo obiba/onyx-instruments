@@ -11,6 +11,7 @@
   <version>1.11-SNAPSHOT</version>
 
   <modules>
+    <module>interface-bonedensity-frax</module>
     <module>interface-anklebrachial-summitdoppler-vantageabi</module>
     <module>interface-bioimpedance-tanita-tbf310</module>
     <module>interface-bioimpedance-tanita-bc418</module>    

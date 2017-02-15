@@ -7,7 +7,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
-package org.obiba.onyx.jade.instrument.gemac800;
+package org.obiba.onyx.jade.instrument.sheffielduniversity;
 
 import javax.swing.*;
 import java.awt.*;
@@ -15,20 +15,29 @@ import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.io.FileNotFoundException;
+import java.io.BufferedReader;
 import java.io.FilenameFilter;
+import java.io.StringWriter;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
-import java.util.Locale;
+import java.util.List;
 import java.util.Map;
-import java.util.ResourceBundle;
 
 import org.obiba.onyx.jade.client.JnlpClient;
 import org.obiba.onyx.jade.instrument.ExternalAppLauncherHelper;
 import org.obiba.onyx.jade.instrument.InstrumentRunner;
 import org.obiba.onyx.jade.instrument.service.InstrumentExecutionService;
 import org.obiba.onyx.util.FileUtil;
+import org.obiba.onyx.util.UnicodeReader;
 import org.obiba.onyx.util.data.Data;
 import org.obiba.onyx.util.data.DataBuilder;
 import org.obiba.onyx.util.data.DataType;
@@ -42,7 +51,7 @@ import org.springframework.beans.factory.InitializingBean;
  * @author inglisd
  */
 
-public class FRAXInstrumentRunner implements InstrumentRunner, InitializingBean {
+public class FRAXInstrumentRunner implements InstrumentRunner/*, InitializingBean*/ {
 
   private static final Logger log = LoggerFactory.getLogger(JnlpClient.class);
 
@@ -101,11 +110,11 @@ public class FRAXInstrumentRunner implements InstrumentRunner, InitializingBean 
     this.outFileName = outFileName;
   }
 
-  public void getInFileName() {
+  public String getInFileName() {
     return inFileName;
   }
 
-  public void getOutFileName() {
+  public String getOutFileName() {
     return outFileName;
   }
 
@@ -145,7 +154,7 @@ public class FRAXInstrumentRunner implements InstrumentRunner, InitializingBean 
   /**
    *  parse the frax output.txt file
    */
-  private <Map<String, Data> retrieveDeviceData() {
+  private Map<String, Data> retrieveDeviceData() {
 
     Map<String, Data> outputData = new HashMap<String, Data>();
     File resultFile = getOutFile();
@@ -156,7 +165,7 @@ public class FRAXInstrumentRunner implements InstrumentRunner, InitializingBean 
 
     try {
       if(resultFile.exists()) {
-        outputData.put("RESULT_FILE",DataBuilder.buildBinary(resultFile));
+        outputData.put("RESULT_FILE", DataBuilder.buildBinary(resultFile));
         resultFileStrm = new FileInputStream(resultFile);
         resultReader = new UnicodeReader(resultFileStrm);
         fileReader = new BufferedReader(resultReader);
@@ -168,17 +177,17 @@ public class FRAXInstrumentRunner implements InstrumentRunner, InitializingBean 
             output.addAll(Arrays.asList(line.split(delim)));
           }
         }
-      if(expectedCount == output.size()) {
-        outputData.put("OSTEO_FX",DataBuilder.buildDecimal(Double.valueOf(output.get(13).trim()));
-        outputData.put("HIP_FX",DataBuilder.buildDecimal(Double.valueOf(output.get(14).trim()));
-        outputData.put("OSTEO_BMD_FX",DataBuilder.buildDecimal(Double.valueOf(output.get(15).trim()));
-        outputData.put("HIP_BMD_FX",DataBuilder.buildDecimal(Double.valueOf(output.get(16).trim()));
+        if(expectedCount == output.size()) {
+          outputData.put("OSTEO_FX", DataBuilder.buildDecimal(Double.valueOf(output.get(13).trim())));
+          outputData.put("HIP_FX", DataBuilder.buildDecimal(Double.valueOf(output.get(14).trim())));
+          outputData.put("OSTEO_BMD_FX", DataBuilder.buildDecimal(Double.valueOf(output.get(15).trim())));
+          outputData.put("HIP_BMD_FX", DataBuilder.buildDecimal(Double.valueOf(output.get(16).trim())));
+        }
+
+        resultFileStrm.close();
+        fileReader.close();
+        resultReader.close();
       }
-
-      resultFileStrm.close();
-      fileReader.close();
-      resultReader.close();
-
     } catch(FileNotFoundException fnfEx) {
       log.warn("Frax output file not found");
     } catch(IOException ioEx) {
@@ -205,7 +214,7 @@ public class FRAXInstrumentRunner implements InstrumentRunner, InitializingBean 
     File backupInFile = new File( inFile.getName() + ".orig" );
     try {
       if(inFile.exists()) {
-        FileUtil.copyFile(inFile,backupInfile);
+        FileUtil.copyFile(inFile,backupInFile);
       }
     } catch(Exception e) {
       throw new RuntimeException("Error backing up FRAX " + inFile.getName() + " file", e);
@@ -214,7 +223,7 @@ public class FRAXInstrumentRunner implements InstrumentRunner, InitializingBean 
     File backupOutFile = new File( outFile.getName() + ".orig" );
     try {
       if(outFile.exists()) {
-        FileUtil.copyFile(outFile,backupOutfile);
+        FileUtil.copyFile(outFile,backupOutFile);
         outFile.delete();
       }
     } catch(Exception e) {
@@ -230,7 +239,7 @@ public class FRAXInstrumentRunner implements InstrumentRunner, InitializingBean 
     File backupInFile = new File( inFile.getName() + ".orig" );
     try {
       if(backupInFile.exists()) {
-        FileUtil.copyFile(backupInFile,infile);
+        FileUtil.copyFile(backupInFile,inFile);
       }
     } catch(Exception e) {
       throw new RuntimeException("Error restoring FRAX " + inFile.getName() + " file", e);
@@ -239,7 +248,7 @@ public class FRAXInstrumentRunner implements InstrumentRunner, InitializingBean 
     File backupOutFile = new File( outFile.getName() + ".orig" );
     try {
       if(backupOutFile.exists()) {
-        FileUtil.copyFile(backupOutFile,outfile);
+        FileUtil.copyFile(backupOutFile,outFile);
       }
     } catch(Exception e) {
       throw new RuntimeException("Error restoring FRAX " + outFile.getName() + " file", e);
@@ -252,7 +261,7 @@ public class FRAXInstrumentRunner implements InstrumentRunner, InitializingBean 
   private void initParticipantData() {
     File inFile = getInFile();
     try {
-      StringWriter writer = new StringWriter(inFile);
+      StringWriter writer = new StringWriter();
 
       writer.write(typeCode);
       writer.write(",");
@@ -269,7 +278,7 @@ public class FRAXInstrumentRunner implements InstrumentRunner, InitializingBean 
         } catch(ParseException e) {
         }
       }
-      writer.write((null != age ? age : "_"));
+      writer.write((null != age ? age.toString() : "_"));
       writer.write(",");
 
       String[] parameterArray = {
@@ -283,19 +292,23 @@ public class FRAXInstrumentRunner implements InstrumentRunner, InitializingBean 
         "INPUT_PARTICIPANT_OSTEO",
         "INPUT_PARTICIPANT_ALCOHOL",
         "INPUT_PARTICIPANT_TSCORE"
-      }
+      };
       int size = parameterArray.length - 1;
       for(int i = 0; i < size; i++) {
-        writeParameter(writer, parameterArray[i]);
+        writeParameter(writer, parameterArray[i], false);
       }
       writeParameter(writer, parameterArray[size], true);
+      FileWriter fileWriter = new FileWriter(inFile);
+      fileWriter.write(writer.toString());
+      fileWriter.close();
+
     } catch(Exception e) {
       log.error("Unable to write participant data: " + inFile.getAbsolutePath(), e);
       instrumentExecutionService.instrumentRunnerError(e);
     }
   }
 
-  private void writeParameter(StringWriter writer, String name, Boolean isLast = false) {
+  private void writeParameter(StringWriter writer, String name, boolean isLast ) {
     if(instrumentExecutionService.hasInputParameter(name)) {
       Data data = instrumentExecutionService.getInputParameterValue(name);
       String value = null != data.getValue() ? data.getValueAsString() : "_";

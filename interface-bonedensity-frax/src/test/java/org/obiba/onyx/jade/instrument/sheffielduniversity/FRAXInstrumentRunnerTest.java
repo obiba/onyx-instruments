@@ -123,9 +123,9 @@ public class FRAXInstrumentRunnerTest {
       "INPUT_PARTICIPANT_BIRTH_DATE",
       "INPUT_PARTICIPANT_INTERVIEW_DATE")).andReturn(inputData);
 
-    SimpleDateFormat birthDateFormatter = new SimpleDateFormat("yyyy-MM-dd");
-    expect(instrumentExecutionServiceMock.getDateAsString("INPUT_PARTICIPANT_BIRTH_DATE", birthDateFormatter)).andReturn("1936-09-26");
-    expect(instrumentExecutionServiceMock.getDateAsString("INPUT_PARTICIPANT_INTERVIEW_DATE", birthDateFormatter)).andReturn("2012-09-13");
+    SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd");
+    expect(instrumentExecutionServiceMock.getDateAsString("INPUT_PARTICIPANT_BIRTH_DATE", dateFormatter)).andReturn("1936-09-26");
+    expect(instrumentExecutionServiceMock.getDateAsString("INPUT_PARTICIPANT_INTERVIEW_DATE", dateFormatter)).andReturn("2012-09-13");
     replay(instrumentExecutionServiceMock);
 
     fraxInstrumentRunner.initialize();
@@ -179,7 +179,7 @@ public class FRAXInstrumentRunnerTest {
 
   }
 
-  private void simulateResults() FileNotFoundException, IOException, URISyntaxException {
+  private void simulateResults() throws FileNotFoundException, IOException, URISyntaxException {
 
      // Copy the results file to the test directory.
      FileUtil.copyFile(new File(getClass().getResource("/output.txt").toURI()),
