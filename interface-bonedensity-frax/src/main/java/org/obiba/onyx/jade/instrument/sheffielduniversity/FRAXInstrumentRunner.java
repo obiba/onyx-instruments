@@ -59,6 +59,8 @@ public class FRAXInstrumentRunner implements InstrumentRunner, InitializingBean 
 
   private String countryCode;
 
+  private String fraxPath;
+
   public InstrumentExecutionService getInstrumentExecutionService() {
     return instrumentExecutionService;
   }
@@ -75,12 +77,20 @@ public class FRAXInstrumentRunner implements InstrumentRunner, InitializingBean 
     this.externalAppHelper = externalAppHelper;
   }
 
+  public String getFraxPath() {
+    return fraxPath;
+  }
+
+  public void setFraxPath(String fraxPath) {
+    this.fraxPath = fraxPath;
+  }
+
   private File getInFile() {
-    return new File( externalAppHelper.getWorkDir(), inFileName );
+    return new File( getFraxPath(), inFileName );
   }
 
   private File getOutFile() {
-    return new File( externalAppHelper.getWorkDir(), outFileName );
+    return new File( getFraxPath(), outFileName );
   }
 
   public void setInFileName(String inFileName) {
@@ -89,6 +99,14 @@ public class FRAXInstrumentRunner implements InstrumentRunner, InitializingBean 
 
   public void setOutFileName(String outFileName) {
     this.outFileName = outFileName;
+  }
+
+  public void getInFileName() {
+    return inFileName;
+  }
+
+  public void getOutFileName() {
+    return outFileName;
   }
 
   /**
@@ -242,9 +260,9 @@ public class FRAXInstrumentRunner implements InstrumentRunner, InitializingBean 
       writer.write(",");
 
       Double age = null;
-      if(instrumentExecutionService.hasInputParameter("INPUT_PARTICIPANT_DATE_BIRTH") &&
+      if(instrumentExecutionService.hasInputParameter("INPUT_PARTICIPANT_BIRTH_DATE") &&
          instrumentExecutionService.hasInputParameter("INPUT_PARTICIPANT_INTERVIEW_DATE")) {
-        String dob = instrumentExecutionService.getInputParameterValue("INPUT_PARTICIPANT_DATE_BIRTH").getValueAsString();
+        String dob = instrumentExecutionService.getInputParameterValue("INPUT_PARTICIPANT_BIRTH_DATE").getValueAsString();
         String today = instrumentExecutionService.getInputParameterValue("INPUT_PARTICIPANT_INTERVIEW_DATE").getValueAsString();
         try {
           age = computeYearsDifference(today, dob);
@@ -255,7 +273,7 @@ public class FRAXInstrumentRunner implements InstrumentRunner, InitializingBean 
       writer.write(",");
 
       String[] parameterArray = {
-        "INPUT_PARTICIPANT_GENDER",
+        "INPUT_PARTICIPANT_SEX",
         "INPUT_PARTICIPANT_BMI",
         "INPUT_PARTICIPANT_PREVIOUS_FX",
         "INPUT_PARTICIPANT_PARENT_FX",
