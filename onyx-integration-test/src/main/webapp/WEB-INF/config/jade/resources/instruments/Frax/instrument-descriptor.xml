@@ -9,21 +9,26 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <instrumentType>
+
   <name>Frax</name>
 
+  <instrumentParameters>
+
     <input>
+      <vendorName>BirthDate</vendorName>
       <code>INPUT_PARTICIPANT_BIRTH_DATE</code>
-      <dataType>TEXT</dataType>
+      <dataType>DATE</dataType>
       <captureMethod>AUTOMATIC</captureMethod>
       <dataSource class="scriptDataSource">
-        <valueType>text</valueType>
+        <valueType>date</valueType>
         <script>
-          $('Participants:Admin.Participant.birthDate').format('yyyy-MM-dd')
+          $('Participants:Admin.Participant.birthDate')
         </script>
       </dataSource>
     </input>
 
     <input>
+      <vendorName>Sex</vendorName>
       <code>INPUT_PARTICIPANT_SEX</code>
       <dataType>INTEGER</dataType>
       <captureMethod>AUTOMATIC</captureMethod>
@@ -36,18 +41,20 @@
     </input>
 
     <input>
+      <vendorName>InterviewDate</vendorName>
       <code>INPUT_PARTICIPANT_INTERVIEW_DATE</code>
-      <dataType>TEXT</dataType>
+      <dataType>DATE</dataType>
       <captureMethod>AUTOMATIC</captureMethod>
       <dataSource class="scriptDataSource">
-        <valueType>text</valueType>
+        <valueType>date</valueType>
         <script>
-          $('Participants:Admin.Participant.appointmentDate').format('yyyy-MM-dd')
+          $('Participants:Admin.Participant.appointmentDate')
         </script>
       </dataSource>
     </input>
 
     <input>
+      <vendorName>BMI</vendorName>
       <code>INPUT_PARTICIPANT_BMI</code>
       <dataType>DECIMAL</dataType>
       <captureMethod>COMPUTED</captureMethod>
@@ -68,6 +75,7 @@
     </input>
 
     <input>
+      <vendorName>TScore</vendorName>
       <code>INPUT_PARTICIPANT_TSCORE</code>
       <dataType>DECIMAL</dataType>
       <captureMethod>COMPUTED</captureMethod>
@@ -95,6 +103,7 @@
     </input>
 
     <input>
+      <vendorName>Smoker</vendorName>
       <code>INPUT_PARTICIPANT_SMOKER</code>
       <dataType>INTEGER</dataType>
       <captureMethod>AUTOMATIC</captureMethod>
@@ -108,6 +117,7 @@
     </input>
 
     <input>
+      <vendorName>PreviousFx</vendorName>
       <code>INPUT_PARTICIPANT_PREVIOUS_FX</code>
       <dataType>INTEGER</dataType>
       <captureMethod>AUTOMATIC</captureMethod>
@@ -121,6 +131,7 @@
     </input>
 
     <input>
+      <vendorName>ParentFx</vendorName>
       <code>INPUT_PARTICIPANT_PARENT_FX</code>
       <dataType>INTEGER</dataType>
       <captureMethod>AUTOMATIC</captureMethod>
@@ -134,6 +145,7 @@
     </input>
 
     <input>
+      <vendorName>RheumatoidArthritis</vendorName>
       <code>INPUT_PARTICIPANT_ARTHRITIS</code>
       <dataType>INTEGER</dataType>
       <captureMethod>AUTOMATIC</captureMethod>
@@ -147,6 +159,7 @@
     </input>
 
     <input>
+      <vendorName>SecondaryOsteoporosis</vendorName>
       <code>INPUT_PARTICIPANT_OSTEO</code>
       <dataType>INTEGER</dataType>
       <captureMethod>AUTOMATIC</captureMethod>
@@ -160,6 +173,7 @@
     </input>
 
     <input>
+      <vendorName>Glucocorticoid</vendorName>
       <code>INPUT_PARTICIPANT_GLUCO</code>
       <dataType>INTEGER</dataType>
       <captureMethod>AUTOMATIC</captureMethod>
@@ -173,6 +187,7 @@
     </input>
 
     <input>
+      <vendorName>Alcohol</vendorName>
       <code>INPUT_PARTICIPANT_ALCOHOL</code>
       <dataType>INTEGER</dataType>
       <captureMethod>AUTOMATIC</captureMethod>
@@ -192,28 +207,24 @@
       <dataType>DECIMAL</dataType>
       <captureMethod>AUTOMATIC</captureMethod>
     </output>
-
     <output>
       <vendorName>HIP_PFX</vendorName>
       <code>RES_HIP_PFX</code>
       <dataType>DECIMAL</dataType>
       <captureMethod>AUTOMATIC</captureMethod>
     </output>
-
     <output>
       <vendorName>OSTEO_PFX_BMD</vendorName>
       <code>RES_OSTEO_PFX_BMD</code>
       <dataType>DECIMAL</dataType>
       <captureMethod>AUTOMATIC</captureMethod>
     </output>
-
     <output>
       <vendorName>HIP_PFX_BMD</vendorName>
       <code>RES_HIP_PFX_BMD</code>
       <dataType>DECIMAL</dataType>
       <captureMethod>AUTOMATIC</captureMethod>
     </output>
-
     <output>
       <vendorName>RESULT_FILE</vendorName>
       <code>RES_RESULT_FILE</code>
@@ -221,5 +232,7 @@
       <mimeType>text/plain</mimeType>
       <captureMethod>AUTOMATIC</captureMethod>
     </output>
+
   </instrumentParameters>
+
 </instrumentType>

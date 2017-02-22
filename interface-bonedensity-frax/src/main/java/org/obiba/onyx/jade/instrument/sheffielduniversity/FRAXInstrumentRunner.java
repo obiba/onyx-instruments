@@ -9,30 +9,27 @@
  ******************************************************************************/
 package org.obiba.onyx.jade.instrument.sheffielduniversity;
 
-import javax.swing.*;
-import java.awt.*;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.FileNotFoundException;
-import java.io.BufferedReader;
 import java.io.FilenameFilter;
-import java.io.StringWriter;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
+import java.io.InputStream;
+import java.io.StringWriter;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.swing.JOptionPane;
 
-import org.obiba.onyx.jade.client.JnlpClient;
 import org.obiba.onyx.jade.instrument.ExternalAppLauncherHelper;
 import org.obiba.onyx.jade.instrument.InstrumentRunner;
 import org.obiba.onyx.jade.instrument.service.InstrumentExecutionService;
@@ -43,7 +40,6 @@ import org.obiba.onyx.util.data.DataBuilder;
 import org.obiba.onyx.util.data.DataType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
 
 /**
  * Specified instrument runner for the FRAX calculator
@@ -51,23 +47,28 @@ import org.springframework.beans.factory.InitializingBean;
  * @author inglisd
  */
 
-public class FRAXInstrumentRunner implements InstrumentRunner/*, InitializingBean*/ {
+public class FRAXInstrumentRunner implements InstrumentRunner {
 
-  private static final Logger log = LoggerFactory.getLogger(JnlpClient.class);
+  private static final Logger log = LoggerFactory.getLogger(FRAXInstrumentRunner.class);
 
   // Injected by spring.
   protected InstrumentExecutionService instrumentExecutionService;
 
   protected ExternalAppLauncherHelper externalAppHelper;
 
+  // by default always input.txt
   private String inFileName;
 
+  // by default always output.txt
   private String outFileName;
 
+  // "t" for T-Score or "z" for Z-Score
   private String typeCode;
 
-  private String countryCode;
+  // FRAX code for country and ethnicity
+  private Integer countryCode;
 
+  // path to where blackbox.exe is installed
   private String fraxPath;
 
   public InstrumentExecutionService getInstrumentExecutionService() {
@@ -86,6 +87,22 @@ public class FRAXInstrumentRunner implements InstrumentRunner/*, InitializingBea
     this.externalAppHelper = externalAppHelper;
   }
 
+  public String getTypeCode() {
+    return typeCode;
+  }
+
+  public void setTypeCode(String code) {
+    this.typeCode = code.toLowerCase().equals("t") ? "t" : "z";
+  }
+
+  public Integer getCountryCode() {
+    return countryCode;
+  }
+
+  public void setCountryCode(Integer code) {
+    this.countryCode = code;
+  }
+
   public String getFraxPath() {
     return fraxPath;
   }
@@ -95,16 +112,17 @@ public class FRAXInstrumentRunner implements InstrumentRunner/*, InitializingBea
   }
 
   private File getInFile() {
-    return new File( getFraxPath(), inFileName );
+    return new File( fraxPath, inFileName );
   }
 
   private File getOutFile() {
-    return new File( getFraxPath(), outFileName );
+    return new File( fraxPath, outFileName );
   }
 
   public void setInFileName(String inFileName) {
     this.inFileName = inFileName;
   }
+
 
   public void setOutFileName(String outFileName) {
     this.outFileName = outFileName;
@@ -147,14 +165,14 @@ public class FRAXInstrumentRunner implements InstrumentRunner/*, InitializingBea
     sendDataToServer(data);
   }
 
-  private void sendDataToServer(Map<String, Data> data) {
+  public void sendDataToServer(Map<String, Data> data) {
     instrumentExecutionService.addOutputParameterValues(data);
   }
 
   /**
    *  parse the frax output.txt file
    */
-  private Map<String, Data> retrieveDeviceData() {
+  public Map<String, Data> retrieveDeviceData() {
 
     Map<String, Data> outputData = new HashMap<String, Data>();
     File resultFile = getOutFile();
@@ -165,7 +183,7 @@ public class FRAXInstrumentRunner implements InstrumentRunner/*, InitializingBea
 
     try {
       if(resultFile.exists()) {
-        outputData.put("RESULT_FILE", DataBuilder.buildBinary(resultFile));
+
         resultFileStrm = new FileInputStream(resultFile);
         resultReader = new UnicodeReader(resultFileStrm);
         fileReader = new BufferedReader(resultReader);
@@ -177,6 +195,7 @@ public class FRAXInstrumentRunner implements InstrumentRunner/*, InitializingBea
             output.addAll(Arrays.asList(line.split(delim)));
           }
         }
+        output.removeAll(Arrays.asList("",null));
         if(expectedCount == output.size()) {
           outputData.put("OSTEO_FX", DataBuilder.buildDecimal(Double.valueOf(output.get(13).trim())));
           outputData.put("HIP_FX", DataBuilder.buildDecimal(Double.valueOf(output.get(14).trim())));
@@ -184,16 +203,21 @@ public class FRAXInstrumentRunner implements InstrumentRunner/*, InitializingBea
           outputData.put("HIP_BMD_FX", DataBuilder.buildDecimal(Double.valueOf(output.get(16).trim())));
         }
 
+        outputData.put("RESULT_FILE", DataBuilder.buildBinary(resultFile));
+
         resultFileStrm.close();
         fileReader.close();
         resultReader.close();
       }
     } catch(FileNotFoundException fnfEx) {
       log.warn("Frax output file not found");
+
     } catch(IOException ioEx) {
       throw new RuntimeException("Error: retrieve frax data IOException", ioEx);
+
     } catch(Exception ex) {
       throw new RuntimeException("Error: retrieve frax data", ex);
+
     }
 
     return outputData;
@@ -211,23 +235,23 @@ public class FRAXInstrumentRunner implements InstrumentRunner/*, InitializingBea
    */
   private void createBackupFiles() {
     File inFile = getInFile();
-    File backupInFile = new File( inFile.getName() + ".orig" );
+    File backupInFile = new File( inFile.getAbsoluteFile() + ".orig" );
     try {
       if(inFile.exists()) {
         FileUtil.copyFile(inFile,backupInFile);
       }
     } catch(Exception e) {
-      throw new RuntimeException("Error backing up FRAX " + inFile.getName() + " file", e);
+      throw new RuntimeException("Error backing up FRAX " + inFile.getAbsoluteFile() + " file", e);
     }
     File outFile = getOutFile();
-    File backupOutFile = new File( outFile.getName() + ".orig" );
+    File backupOutFile = new File( outFile.getAbsoluteFile() + ".orig" );
     try {
       if(outFile.exists()) {
         FileUtil.copyFile(outFile,backupOutFile);
         outFile.delete();
       }
     } catch(Exception e) {
-      throw new RuntimeException("Error backing up FRAX " + outFile.getName() + " file", e);
+      throw new RuntimeException("Error backing up FRAX " + outFile.getAbsoluteFile() + " file", e);
     }
   }
 
@@ -236,22 +260,22 @@ public class FRAXInstrumentRunner implements InstrumentRunner/*, InitializingBea
    */
   private void restoreFiles() {
     File inFile = getInFile();
-    File backupInFile = new File( inFile.getName() + ".orig" );
+    File backupInFile = new File( inFile.getAbsoluteFile() + ".orig" );
     try {
       if(backupInFile.exists()) {
         FileUtil.copyFile(backupInFile,inFile);
       }
     } catch(Exception e) {
-      throw new RuntimeException("Error restoring FRAX " + inFile.getName() + " file", e);
+      throw new RuntimeException("Error restoring FRAX " + inFile.getAbsoluteFile() + " file", e);
     }
     File outFile = getOutFile();
-    File backupOutFile = new File( outFile.getName() + ".orig" );
+    File backupOutFile = new File( outFile.getAbsoluteFile() + ".orig" );
     try {
       if(backupOutFile.exists()) {
         FileUtil.copyFile(backupOutFile,outFile);
       }
     } catch(Exception e) {
-      throw new RuntimeException("Error restoring FRAX " + outFile.getName() + " file", e);
+      throw new RuntimeException("Error restoring FRAX " + outFile.getAbsoluteFile() + " file", e);
     }
   }
 
@@ -262,26 +286,7 @@ public class FRAXInstrumentRunner implements InstrumentRunner/*, InitializingBea
     File inFile = getInFile();
     try {
       StringWriter writer = new StringWriter();
-
-      writer.write(typeCode);
-      writer.write(",");
-      writer.write(countryCode);
-      writer.write(",");
-
-      Double age = null;
-      if(instrumentExecutionService.hasInputParameter("INPUT_PARTICIPANT_BIRTH_DATE") &&
-         instrumentExecutionService.hasInputParameter("INPUT_PARTICIPANT_INTERVIEW_DATE")) {
-        String dob = instrumentExecutionService.getInputParameterValue("INPUT_PARTICIPANT_BIRTH_DATE").getValueAsString();
-        String today = instrumentExecutionService.getInputParameterValue("INPUT_PARTICIPANT_INTERVIEW_DATE").getValueAsString();
-        try {
-          age = computeYearsDifference(today, dob);
-        } catch(ParseException e) {
-        }
-      }
-      writer.write((null != age ? age.toString() : "_"));
-      writer.write(",");
-
-      String[] parameterArray = {
+      String[] inputParameterCodes = new String[] {
         "INPUT_PARTICIPANT_SEX",
         "INPUT_PARTICIPANT_BMI",
         "INPUT_PARTICIPANT_PREVIOUS_FX",
@@ -291,13 +296,50 @@ public class FRAXInstrumentRunner implements InstrumentRunner/*, InitializingBea
         "INPUT_PARTICIPANT_ARTHRITIS",
         "INPUT_PARTICIPANT_OSTEO",
         "INPUT_PARTICIPANT_ALCOHOL",
-        "INPUT_PARTICIPANT_TSCORE"
+        (typeCode.equalsIgnoreCase("t") ?
+         "INPUT_PARTICIPANT_TSCORE" : "INPUT_PARTICIPANT_ZSCORE"),
+         "INPUT_PARTICIPANT_BIRTH_DATE",
+         "INPUT_PARTICIPANT_INTERVIEW_DATE"
       };
-      int size = parameterArray.length - 1;
-      for(int i = 0; i < size; i++) {
-        writeParameter(writer, parameterArray[i], false);
+
+      Map<String, Data> inputData = instrumentExecutionService.getInputParametersValue(inputParameterCodes);
+
+      writer.write(typeCode);
+      writer.write(",");
+      writer.write(Integer.toString(countryCode));
+      writer.write(",");
+
+      Double age = null;
+      if(inputData.containsKey("INPUT_PARTICIPANT_BIRTH_DATE") &&
+         inputData.containsKey("INPUT_PARTICIPANT_INTERVIEW_DATE")) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        String dob = dateFormat.format(inputData.get("INPUT_PARTICIPANT_BIRTH_DATE").getValue());
+        String today = dateFormat.format(inputData.get("INPUT_PARTICIPANT_INTERVIEW_DATE").getValue());
+        try {
+          age = computeYearsDifference(today, dob);
+          DecimalFormat decFormat = new DecimalFormat("0.##");
+          age = Double.valueOf(decFormat.format(age));
+        } catch(ParseException e) {
+        }
       }
-      writeParameter(writer, parameterArray[size], true);
+      writer.write((null != age ? age.toString() : "_"));
+      writer.write(",");
+
+      int size = inputParameterCodes.length - 2;
+      for(int i = 0; i < size; i++) {
+        String code = inputParameterCodes[i];
+        if(inputData.containsKey(code)) {
+          Data data = inputData.get(code);
+          String value = null != data.getValue() ? data.getValueAsString() : "_";
+          writer.write(value);
+        } else {
+          writer.write("_");
+        }
+        if(size - 1 != i) {
+          writer.write(",");
+        }
+      }
+
       FileWriter fileWriter = new FileWriter(inFile);
       fileWriter.write(writer.toString());
       fileWriter.close();
@@ -305,19 +347,6 @@ public class FRAXInstrumentRunner implements InstrumentRunner/*, InitializingBea
     } catch(Exception e) {
       log.error("Unable to write participant data: " + inFile.getAbsolutePath(), e);
       instrumentExecutionService.instrumentRunnerError(e);
-    }
-  }
-
-  private void writeParameter(StringWriter writer, String name, boolean isLast ) {
-    if(instrumentExecutionService.hasInputParameter(name)) {
-      Data data = instrumentExecutionService.getInputParameterValue(name);
-      String value = null != data.getValue() ? data.getValueAsString() : "_";
-      writer.write(value);
-    } else {
-      writer.write("_");
-    }
-    if(!isLast) {
-      writer.write(",");
     }
   }
 
@@ -329,7 +358,7 @@ public class FRAXInstrumentRunner implements InstrumentRunner/*, InitializingBea
    * @throws ParseException
    */
   public static Double computeYearsDifference(String s1, String s2) throws ParseException {
-    SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
 
     Date d1;
     try {
@@ -354,5 +383,4 @@ public class FRAXInstrumentRunner implements InstrumentRunner/*, InitializingBea
 
     return diff;
   }
-
 }

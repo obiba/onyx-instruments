@@ -11,7 +11,6 @@
   <version>1.11-SNAPSHOT</version>
 
   <modules>
-    <module>interface-bonedensity-frax</module>
     <module>interface-anklebrachial-summitdoppler-vantageabi</module>
     <module>interface-bioimpedance-tanita-tbf310</module>
     <module>interface-bioimpedance-tanita-bc418</module>    
@@ -21,6 +20,7 @@
     <module>interface-spirometry-ndd-easyonpc</module>
     <module>interface-bonedensity-achillesexpress</module>
     <module>interface-bonedensity-holologic-apex</module>
+    <module>interface-bonedensity-frax</module>
     <module>interface-arterialstiffness-sphygmocor</module>
     <module>interface-cognitivetest-noddletest</module>
     <module>interface-bloodpressure-vsm-bptru</module>

@@ -20,8 +20,8 @@
   </bean>
 
   <bean name="externalAppHelper" class="org.obiba.onyx.jade.instrument.ExternalAppLauncherHelper">
-    <property name="fraxPath" value="${org.obiba.onyx.jade.instrument.sheffielduniversity.frax.fraxPath}" />
-    <property name="executable" value="${org.obiba.onyx.jade.instrument.sheffielduniversity.frax.executable}" />
+    <property name="workDir" value="${org.obiba.onyx.jade.instrument.sheffielduniversity.frax.fraxPath}" />
+    <property name="executable" value="blackbox.exe" />
   </bean>
 
 </beans>
