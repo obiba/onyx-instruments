@@ -20,6 +20,7 @@
     <module>interface-spirometry-ndd-easyonpc</module>
     <module>interface-bonedensity-achillesexpress</module>
     <module>interface-bonedensity-holologic-apex</module>
+    <module>interface-bonedensity-frax</module>
     <module>interface-arterialstiffness-sphygmocor</module>
     <module>interface-cognitivetest-noddletest</module>
     <module>interface-bloodpressure-vsm-bptru</module>
