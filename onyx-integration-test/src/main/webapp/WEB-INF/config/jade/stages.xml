@@ -330,6 +330,21 @@
   </stage>
 
   <stage>
+    <name>Frax</name>
+    <module>jade</module>
+    <stageDependencyCondition class="scriptCondition">
+      <stages>
+        <string>Consent</string>
+        <string>StandingHeight</string>
+        <string>Weight</string>
+        <string>BoneDensityAPEX</string>
+      </stages>
+      <script>$('StandingHeight:CALC_AVG_HEIGHT').isNull().not()
+      .and($('Weight:RES_WEIGHT').isNull().not())</script>
+    </stageDependencyCondition>
+  </stage>
+
+  <stage>
     <name>ArtStiffness</name>
     <module>jade</module>
     <stageDependencyCondition class="multipleCondition">

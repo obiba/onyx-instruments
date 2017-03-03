@@ -118,6 +118,14 @@
 
     <dependency>
       <groupId>org.obiba.jade.instrument</groupId>
+      <artifactId>interface-bonedensity-frax</artifactId>
+      <version>${onyx-instruments.version}</version>
+      <type>zip</type>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.obiba.jade.instrument</groupId>
       <artifactId>interface-ecg</artifactId>
       <version>${onyx-instruments.version}</version>
       <type>zip</type>
@@ -272,6 +280,14 @@
                   <type>zip</type>
                   <outputDirectory>
                     ${project.build.directory}/${project.build.finalName}/instruments/BoneDensityAPEX
+                  </outputDirectory>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>org.obiba.jade.instrument</groupId>
+                  <artifactId>interface-bonedensity-frax</artifactId>
+                  <type>zip</type>
+                  <outputDirectory>
+                    ${project.build.directory}/${project.build.finalName}/instruments/Frax
                   </outputDirectory>
                 </artifactItem>
                 <artifactItem>
