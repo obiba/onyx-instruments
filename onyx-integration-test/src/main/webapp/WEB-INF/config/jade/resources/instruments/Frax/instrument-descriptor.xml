@@ -9,9 +9,7 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <instrumentType>
-
   <name>Frax</name>
-
   <instrumentParameters>
 
     <input>
@@ -35,7 +33,7 @@
       <dataSource class="scriptDataSource">
         <valueType>integer</valueType>
         <script>
-          $('Participants:Admin.Participant.gender').upperCase().matches(/^F/).value()?1:0
+          $('Participants:Admin.Participant.gender').upperCase().matches(/^F/).value() ? 1 : 0
         </script>
       </dataSource>
     </input>
@@ -61,14 +59,10 @@
       <dataSource class="scriptDataSource">
         <valueType>decimal</valueType>
         <script>
-          var res = null;
-          var w = $('Impedance310:CALC_AVG_WEIGHT');
-          var weight = w.isNull().value() ? $('Weight:RES_WEIGHT') : w;
-          var height = $('StandingHeight:CALC_AVG_HEIGHT').div(100);
-          if(weight.isNull().not().and(height.isNull().not().and(height.gt(0))).value()) {
-            res = weight.div(height.multiply(height));
-          }
-          res;
+          var weight = $('Weight:RES_WEIGHT');
+          var height = $('StandingHeight:RES_HEIGHT').div(100);
+          (weight.isNull().not().and(height.isNull().not().and(height.gt(0))).value()) ?
+           weight.div(height.multiply(height)) : null
         </script>
       </dataSource>
       <measurementUnit>kg/m2</measurementUnit>
@@ -82,22 +76,19 @@
       <dataSource class="scriptDataSource">
         <valueType>decimal</valueType>
         <script>
-            var res = null;
-            var bmd = newValue(null,'decimal');
-            if($('BoneDensityAPEX:OUTPUT_HIP_SIDE').any('LEFT').value()) {
-              bmd = $group('BoneDensityAPEX:OUTPUT_HIP_SIDE','LEFT','BoneDensityAPEX:RES_HIP_NECK_BMD')
-                    .asSequence().last();
-            } else if($('BoneDensityAPEX:OUTPUT_HIP_SIDE').any('RIGHT').value()) {
-              bmd = $group('BoneDensityAPEX:OUTPUT_HIP_SIDE','RIGHT','BoneDensityAPEX:RES_HIP_NECK_BMD')
-                    .asSequence().last();
-            }
-            if(bmd.isNull().not().value()) {
-              var M_value = 0.849;
-              var L_value = 1.0;
-              var sigma = 0.111;
-              res = Number((bmd.value()/M_value - 1.0)*M_value/sigma).toFixed(1);
-            }
-            res;
+          var M_value = 0.849;
+          var L_value = 1.0;
+          var sigma = 0.111;
+          var bmd = newValue(null,'decimal');
+          if($('BoneDensityAPEX:OUTPUT_HIP_SIDE').any('LEFT').value()) {
+            bmd = $group('BoneDensityAPEX:OUTPUT_HIP_SIDE','LEFT','BoneDensityAPEX:RES_HIP_NECK_BMD')
+                  .asSequence().last();
+          } else if($('BoneDensityAPEX:OUTPUT_HIP_SIDE').any('RIGHT').value()) {
+            bmd = $group('BoneDensityAPEX:OUTPUT_HIP_SIDE','RIGHT','BoneDensityAPEX:RES_HIP_NECK_BMD')
+                  .asSequence().last();
+          }
+          (bmd.isNull().not().value()) ?
+           Number((bmd.value()/M_value - 1.0)*M_value/sigma).toFixed(1) : null
         </script>
       </dataSource>
     </input>
@@ -106,13 +97,10 @@
       <vendorName>Smoker</vendorName>
       <code>INPUT_PARTICIPANT_SMOKER</code>
       <dataType>INTEGER</dataType>
-      <captureMethod>AUTOMATIC</captureMethod>
+      <captureMethod>COMPUTED</captureMethod>
       <dataSource class="scriptDataSource">
         <valueType>integer</valueType>
-        <script>
-          var res = 0;
-          res;
-        </script>
+        <script>0</script>
       </dataSource>
     </input>
 
@@ -120,13 +108,10 @@
       <vendorName>PreviousFx</vendorName>
       <code>INPUT_PARTICIPANT_PREVIOUS_FX</code>
       <dataType>INTEGER</dataType>
-      <captureMethod>AUTOMATIC</captureMethod>
+      <captureMethod>COMPUTED</captureMethod>
       <dataSource class="scriptDataSource">
         <valueType>integer</valueType>
-        <script>
-          var res = 0;
-          res;
-        </script>
+        <script>0</script>
       </dataSource>
     </input>
 
@@ -134,13 +119,10 @@
       <vendorName>ParentFx</vendorName>
       <code>INPUT_PARTICIPANT_PARENT_FX</code>
       <dataType>INTEGER</dataType>
-      <captureMethod>AUTOMATIC</captureMethod>
+      <captureMethod>COMPUTED</captureMethod>
       <dataSource class="scriptDataSource">
         <valueType>integer</valueType>
-        <script>
-          var res = 0;
-          res;
-        </script>
+        <script>0</script>
       </dataSource>
     </input>
 
@@ -148,13 +130,10 @@
       <vendorName>RheumatoidArthritis</vendorName>
       <code>INPUT_PARTICIPANT_ARTHRITIS</code>
       <dataType>INTEGER</dataType>
-      <captureMethod>AUTOMATIC</captureMethod>
+      <captureMethod>COMPUTED</captureMethod>
       <dataSource class="scriptDataSource">
         <valueType>integer</valueType>
-        <script>
-          var res = 0;
-          res;
-        </script>
+        <script>0</script>
       </dataSource>
     </input>
 
@@ -162,13 +141,10 @@
       <vendorName>SecondaryOsteoporosis</vendorName>
       <code>INPUT_PARTICIPANT_OSTEO</code>
       <dataType>INTEGER</dataType>
-      <captureMethod>AUTOMATIC</captureMethod>
+      <captureMethod>COMPUTED</captureMethod>
       <dataSource class="scriptDataSource">
         <valueType>integer</valueType>
-        <script>
-          var res = 0;
-          res;
-        </script>
+        <script>0</script>
       </dataSource>
     </input>
 
@@ -176,13 +152,10 @@
       <vendorName>Glucocorticoid</vendorName>
       <code>INPUT_PARTICIPANT_GLUCO</code>
       <dataType>INTEGER</dataType>
-      <captureMethod>AUTOMATIC</captureMethod>
+      <captureMethod>COMPUTED</captureMethod>
       <dataSource class="scriptDataSource">
         <valueType>integer</valueType>
-        <script>
-          var res = 0;
-          res;
-        </script>
+        <script>0</script>
       </dataSource>
     </input>
 
@@ -190,38 +163,35 @@
       <vendorName>Alcohol</vendorName>
       <code>INPUT_PARTICIPANT_ALCOHOL</code>
       <dataType>INTEGER</dataType>
-      <captureMethod>AUTOMATIC</captureMethod>
+      <captureMethod>COMPUTED</captureMethod>
       <dataSource class="scriptDataSource">
         <valueType>integer</valueType>
-        <script>
-          var res = 0;
-          res;
-        </script>
+        <script>0</script>
       </dataSource>
     </input>
 
     <!-- Results -->
 	  <output>
-      <vendorName>OSTEO_PFX</vendorName>
-      <code>RES_OSTEO_PFX</code>
+      <vendorName>OSTEO_FX</vendorName>
+      <code>RES_OSTEOFX</code>
       <dataType>DECIMAL</dataType>
       <captureMethod>AUTOMATIC</captureMethod>
     </output>
     <output>
-      <vendorName>HIP_PFX</vendorName>
-      <code>RES_HIP_PFX</code>
+      <vendorName>HIP_FX</vendorName>
+      <code>RES_HIPFX</code>
       <dataType>DECIMAL</dataType>
       <captureMethod>AUTOMATIC</captureMethod>
     </output>
     <output>
-      <vendorName>OSTEO_PFX_BMD</vendorName>
-      <code>RES_OSTEO_PFX_BMD</code>
+      <vendorName>OSTEO_BMD_FX</vendorName>
+      <code>RES_OSTEOFX_BMD</code>
       <dataType>DECIMAL</dataType>
       <captureMethod>AUTOMATIC</captureMethod>
     </output>
     <output>
-      <vendorName>HIP_PFX_BMD</vendorName>
-      <code>RES_HIP_PFX_BMD</code>
+      <vendorName>HIP_BMD_FX</vendorName>
+      <code>RES_HIPFX_BMD</code>
       <dataType>DECIMAL</dataType>
       <captureMethod>AUTOMATIC</captureMethod>
     </output>
@@ -234,5 +204,4 @@
     </output>
 
   </instrumentParameters>
-
 </instrumentType>

@@ -46,16 +46,25 @@ public class FRAXInstrumentRunnerTest {
 
   private InstrumentExecutionService instrumentExecutionServiceMock;
 
+  private File getInFile() {
+    return new File(externalAppHelper.getWorkDir(), fraxInstrumentRunner.getInFileName());
+  }
+  private File getOutFile() {
+    return new File(externalAppHelper.getWorkDir(), fraxInstrumentRunner.getOutFileName());
+  }
+
   @Before
   public void setUp() throws IOException, URISyntaxException {
 
     fraxInstrumentRunner = new FRAXInstrumentRunner();
 
     // create a test directory to simulate blackbox.exe software installation path
-    String fraxSimulatedPath = new File("target", "test-frax").getPath();
-    (new File(fraxSimulatedPath)).mkdir();
+    File fraxSimulatedPath = new File(System.getProperty("java.io.tmpdir"), "test-frax");
+    if(!fraxSimulatedPath.exists() && !fraxSimulatedPath.mkdirs()) {
+      throw new UnknownError("Cannot create directory at path: " + fraxSimulatedPath.getAbsolutePath());
+    }
+    String simulatedPath = fraxSimulatedPath.getAbsolutePath();
 
-    fraxInstrumentRunner.setFraxPath(fraxSimulatedPath);
     fraxInstrumentRunner.setInFileName("input.txt");
     fraxInstrumentRunner.setOutFileName("output.txt");
     fraxInstrumentRunner.setTypeCode("t");
@@ -75,6 +84,7 @@ public class FRAXInstrumentRunnerTest {
       }
     };
 
+    externalAppHelper.setWorkDir(simulatedPath);
     fraxInstrumentRunner.setExternalAppHelper(externalAppHelper);
 
     // Create a mock instrumentExecutionService for testing.
@@ -85,7 +95,7 @@ public class FRAXInstrumentRunnerTest {
   @After
   public void tearDown() {
     fraxInstrumentRunner.shutdown();
-    String fraxSimulatedPath = new File("target", "test-frax").getPath();
+    String fraxSimulatedPath = new File(System.getProperty("java.io.tmpdir"), "test-frax").getPath();
     File fraxSimulated = new File(fraxSimulatedPath);
     if (fraxSimulated.exists()) {
       try {
@@ -188,17 +198,16 @@ public class FRAXInstrumentRunnerTest {
   private void simulateResults() throws FileNotFoundException, IOException, URISyntaxException {
 
     // Copy the results file to the test directory.
-    FileUtil.copyFile(new File(getClass().getResource("/output.txt").toURI()),
-      new File(fraxInstrumentRunner.getFraxPath(), fraxInstrumentRunner.getOutFileName()) );
+    FileUtil.copyFile(new File(getClass().getResource("/output.txt").toURI()),getOutFile());
   }
 
   private void simulatePreExistingFiles() throws IOException {
 
     // Create dummy pre-existing files
-    FileWriter dummyInput = new FileWriter(new File(fraxInstrumentRunner.getFraxPath(), fraxInstrumentRunner.getInFileName()));
+    FileWriter dummyInput = new FileWriter(getInFile());
     dummyInput.write("test input");
     dummyInput.close();
-    FileWriter dummyOutput = new FileWriter(new File(fraxInstrumentRunner.getFraxPath(), fraxInstrumentRunner.getOutFileName()));
+    FileWriter dummyOutput = new FileWriter(getOutFile());
     dummyOutput.write("test output");
     dummyOutput.close();
   }
@@ -206,14 +215,14 @@ public class FRAXInstrumentRunnerTest {
   private void verifyInitialization() {
 
     // Make sure the backup files have been created.
-    Assert.assertTrue(new File(fraxInstrumentRunner.getFraxPath(), fraxInstrumentRunner.getInFileName() + ".orig").exists());
-    Assert.assertTrue(new File(fraxInstrumentRunner.getFraxPath(), fraxInstrumentRunner.getOutFileName() + ".orig").exists());
+    Assert.assertTrue(new File(getInFile().getAbsolutePath() + ".orig").exists());
+    Assert.assertTrue(new File(getOutFile().getAbsolutePath() + ".orig").exists());
   }
 
   private void verifyCleanup() {
 
     // Make sure the backup files have been deleted.
-    Assert.assertFalse(new File(fraxInstrumentRunner.getFraxPath(), fraxInstrumentRunner.getInFileName() + ".orig").exists());
-    Assert.assertFalse(new File(fraxInstrumentRunner.getFraxPath(), fraxInstrumentRunner.getOutFileName() + ".orig").exists());
+    Assert.assertFalse(new File(getInFile().getAbsolutePath() + ".orig").exists());
+    Assert.assertFalse(new File(getOutFile().getAbsolutePath() + ".orig").exists());
   }
 }
