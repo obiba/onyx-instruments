@@ -68,9 +68,6 @@ public class FRAXInstrumentRunner implements InstrumentRunner {
   // FRAX code for country and ethnicity
   private Integer countryCode;
 
-  // path to where blackbox.exe is installed
-  private String fraxPath;
-
   public InstrumentExecutionService getInstrumentExecutionService() {
     return instrumentExecutionService;
   }
@@ -103,26 +100,17 @@ public class FRAXInstrumentRunner implements InstrumentRunner {
     this.countryCode = code;
   }
 
-  public String getFraxPath() {
-    return fraxPath;
-  }
-
-  public void setFraxPath(String fraxPath) {
-    this.fraxPath = fraxPath;
-  }
-
   private File getInFile() {
-    return new File( fraxPath, inFileName );
+    return new File(externalAppHelper.getWorkDir(), inFileName);
   }
 
   private File getOutFile() {
-    return new File( fraxPath, outFileName );
+    return new File(externalAppHelper.getWorkDir(), outFileName);
   }
 
   public void setInFileName(String inFileName) {
     this.inFileName = inFileName;
   }
-
 
   public void setOutFileName(String outFileName) {
     this.outFileName = outFileName;
@@ -139,13 +127,9 @@ public class FRAXInstrumentRunner implements InstrumentRunner {
   /**
    * Implements parent method initialize from InstrumentRunner
    */
+  @Override
   public void initialize() {
-    if(externalAppHelper.isSotfwareAlreadyStarted()) {
-      JOptionPane.showMessageDialog(null, externalAppHelper
-          .getExecutable() + " already locked for execution.  Please make sure that another instance is not running.",
-          "Cannot start application!", JOptionPane.ERROR_MESSAGE);
-      throw new RuntimeException("already locked for execution");
-    }
+    log.info("Initializing Frax");
     createBackupFiles();
     initParticipantData();
   }
@@ -153,15 +137,21 @@ public class FRAXInstrumentRunner implements InstrumentRunner {
   /**
    * Implements parent method run from InstrumentRunner
    */
+  @Override
   public void run() {
+    log.info("Launching Frax application");
     externalAppHelper.launch();
 
     try {
+      log.info("Closing application at {}", new Date().toString());
       Thread.sleep(2000);
     } catch(InterruptedException e) {
     }
 
+    log.info("Retrieving measurements");
     Map<String, Data> data = retrieveDeviceData();
+
+    log.info("Sending data to server");
     sendDataToServer(data);
   }
 
@@ -182,7 +172,8 @@ public class FRAXInstrumentRunner implements InstrumentRunner {
     String delim = ",";
 
     try {
-      if(resultFile.exists()) {
+      if(resultFile.exists() && !resultFile.isDirectory()) {
+        log.info("Frax result file found ... parsing");
 
         resultFileStrm = new FileInputStream(resultFile);
         resultReader = new UnicodeReader(resultFileStrm);
@@ -195,28 +186,38 @@ public class FRAXInstrumentRunner implements InstrumentRunner {
             output.addAll(Arrays.asList(line.split(delim)));
           }
         }
+        resultFileStrm.close();
+        fileReader.close();
+        resultReader.close();
+
         output.removeAll(Arrays.asList("",null));
+        String parseResult = "";
+        for(String s : output) {
+          parseResult += s + ",";
+        }
+        log.info("Parse results: " + parseResult);
+
         if(expectedCount == output.size()) {
           outputData.put("OSTEO_FX", DataBuilder.buildDecimal(Double.valueOf(output.get(13).trim())));
           outputData.put("HIP_FX", DataBuilder.buildDecimal(Double.valueOf(output.get(14).trim())));
           outputData.put("OSTEO_BMD_FX", DataBuilder.buildDecimal(Double.valueOf(output.get(15).trim())));
           outputData.put("HIP_BMD_FX", DataBuilder.buildDecimal(Double.valueOf(output.get(16).trim())));
+          log.info("Expected results size achieved");
         }
 
         outputData.put("RESULT_FILE", DataBuilder.buildBinary(resultFile));
-
-        resultFileStrm.close();
-        fileReader.close();
-        resultReader.close();
+      }  else {
+        log.info("Frax result file missing " + resultFile.getAbsoluteFile());
       }
     } catch(FileNotFoundException fnfEx) {
       log.warn("Frax output file not found");
+      throw new RuntimeException("Error: retrieve frax data FileNotfoundException", fnfEx);
 
     } catch(IOException ioEx) {
       throw new RuntimeException("Error: retrieve frax data IOException", ioEx);
 
     } catch(Exception ex) {
-      throw new RuntimeException("Error: retrieve frax data", ex);
+      throw new RuntimeException("Error: retrieve frax data Exception", ex);
 
     }
 
@@ -226,7 +227,9 @@ public class FRAXInstrumentRunner implements InstrumentRunner {
   /**
    * Implements parent method shutdown from InstrumentRunner Delete results from current measurement
    */
+  @Override
   public void shutdown() {
+    log.info("Shut down");
     restoreFiles();
   }
 
@@ -237,8 +240,10 @@ public class FRAXInstrumentRunner implements InstrumentRunner {
     File inFile = getInFile();
     File backupInFile = new File( inFile.getAbsoluteFile() + ".orig" );
     try {
-      if(inFile.exists()) {
+      if(inFile.exists() && !inFile.isDirectory()) {
+        log.info("backing up existing input file");
         FileUtil.copyFile(inFile,backupInFile);
+        inFile.delete();
       }
     } catch(Exception e) {
       throw new RuntimeException("Error backing up FRAX " + inFile.getAbsoluteFile() + " file", e);
@@ -246,7 +251,8 @@ public class FRAXInstrumentRunner implements InstrumentRunner {
     File outFile = getOutFile();
     File backupOutFile = new File( outFile.getAbsoluteFile() + ".orig" );
     try {
-      if(outFile.exists()) {
+      if(outFile.exists() && !outFile.isDirectory()) {
+        log.info("backing up existing output file");
         FileUtil.copyFile(outFile,backupOutFile);
         outFile.delete();
       }
@@ -263,7 +269,12 @@ public class FRAXInstrumentRunner implements InstrumentRunner {
     File backupInFile = new File( inFile.getAbsoluteFile() + ".orig" );
     try {
       if(backupInFile.exists()) {
+        log.info("restoring pre-existing input file {} => {}",
+          backupInFile.getAbsoluteFile(), inFile.getAbsoluteFile());
         FileUtil.copyFile(backupInFile,inFile);
+        backupInFile.delete();
+      } else {
+        inFile.delete();
       }
     } catch(Exception e) {
       throw new RuntimeException("Error restoring FRAX " + inFile.getAbsoluteFile() + " file", e);
@@ -272,7 +283,12 @@ public class FRAXInstrumentRunner implements InstrumentRunner {
     File backupOutFile = new File( outFile.getAbsoluteFile() + ".orig" );
     try {
       if(backupOutFile.exists()) {
+        log.info("restoring pre-existing output file {} => {}",
+          backupOutFile.getAbsoluteFile(), outFile.getAbsoluteFile());
         FileUtil.copyFile(backupOutFile,outFile);
+        backupOutFile.delete();
+      } else {
+        outFile.delete();
       }
     } catch(Exception e) {
       throw new RuntimeException("Error restoring FRAX " + outFile.getAbsoluteFile() + " file", e);
@@ -343,6 +359,8 @@ public class FRAXInstrumentRunner implements InstrumentRunner {
       FileWriter fileWriter = new FileWriter(inFile);
       fileWriter.write(writer.toString());
       fileWriter.close();
+      log.info("Wrote Frax input: " + writer.toString());
+      log.info("to file: " + inFile.getAbsolutePath());
 
     } catch(Exception e) {
       log.error("Unable to write participant data: " + inFile.getAbsolutePath(), e);
