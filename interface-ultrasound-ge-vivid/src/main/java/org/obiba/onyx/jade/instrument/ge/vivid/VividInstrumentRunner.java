@@ -76,7 +76,8 @@ public class VividInstrumentRunner implements InstrumentRunner {
   @Override
   public void run() {
     gui = new DicomStorageScp(server,
-        new VividDicomStoragePredicate(instrumentExecutionService.getExpectedOutputParameterVendorNames()));
+        new VividDicomStoragePredicate(instrumentExecutionService.getExpectedOutputParameterVendorNames(),
+          instrumentExecutionService.getParticipantID()));
 
     try {
       server.start();
@@ -197,16 +198,25 @@ public class VividInstrumentRunner implements InstrumentRunner {
 
     private final Map<String, List<String>> srIdsMap = new HashMap<>();
 
-    public VividDicomStoragePredicate(Set<String> output) {
+    private final String participantID;
+
+    public VividDicomStoragePredicate(Set<String> output, String participantID) {
       this.output = output;
+      this.participantID = participantID;
     }
 
     @Override
     public boolean apply(String siuid, File file, DicomObject dicomObject) {
+      log.info("StudyInstanceUID={}", siuid);
       String mediaStorageSOPClassUID = dicomObject.contains(Tag.MediaStorageSOPClassUID) ? dicomObject
           .getString(Tag.MediaStorageSOPClassUID) : null;
       String modality = dicomObject.getString(Tag.Modality);
-      log.info("StudyInstanceUID={}", siuid);
+      String patientID = dicomObject.getString(Tag.PatientID).trim();
+      if(null != participantID && !participantID.equals(patientID))
+      {
+        log.info("  Wrong participant data sent: expected {} received {}",participantID, patientID);
+        return false;
+      }
       StringBuffer outputs = new StringBuffer();
       for (String s : output) outputs.append(s).append(" ");
       log.info("  Expected outputs: {}", outputs);
