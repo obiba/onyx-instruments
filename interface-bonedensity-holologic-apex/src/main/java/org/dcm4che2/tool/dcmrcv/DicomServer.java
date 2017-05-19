@@ -6,7 +6,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.Tag;
@@ -62,6 +64,8 @@ public class DicomServer {
   private final List<StorageListener> listeners = new ArrayList<StorageListener>();
 
   private final List<StateListener> stateListeners = new ArrayList<StateListener>();
+
+  private final Set<File> dirtyFileCache = new HashSet<File>();
 
   private State state;
 
@@ -136,6 +140,7 @@ public class DicomServer {
 
   /**
    * Return dicom files. (Oldest to Latest date modified)
+   *
    * @return
    */
   public List<StoredDicomFile> listSortedDicomFiles() {
@@ -143,7 +148,9 @@ public class DicomServer {
     if(files != null) {
       List<StoredDicomFile> storedFiles = new ArrayList<StoredDicomFile>(files.length);
       for(File file : files) {
-        storedFiles.add(new StoredDicomFile(file));
+        if(!dirtyFileCache.contains(file)) {
+          storedFiles.add(new StoredDicomFile(file));
+        }
       }
       Collections.sort(storedFiles, new Comparator<StoredDicomFile>() {
 
@@ -152,9 +159,20 @@ public class DicomServer {
           return new Long(o1.getFile().lastModified()).compareTo(o2.getFile().lastModified());
         }
       });
+
       return storedFiles;
     }
     return Collections.emptyList();
+  }
+
+  /**
+   * Cache dicom files to be excluded from the list
+   * returned by listSortedDicomFiles.
+   *
+   * @param file
+   */
+  public void cacheDirtyFile(StoredDicomFile file) {
+    dirtyFileCache.add(file.getFile());
   }
 
   private void changeState(State newState) {

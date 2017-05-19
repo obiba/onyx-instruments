@@ -48,8 +48,6 @@ public class APEXInstrumentRunner implements InstrumentRunner {
 
   private File dcmDir;
 
-  //private List<String> participantFiles = new ArrayList<String>();
-
   private Set<String> outVendorNames;
 
   private Locale locale;
@@ -63,6 +61,8 @@ public class APEXInstrumentRunner implements InstrumentRunner {
   private Map<String, String> participantData = new HashMap<String, String>();
 
   private boolean isRepeatable;
+
+  private static final String DICOM = "DICOM";
 
   public enum Side {
     LEFT, RIGHT
@@ -99,7 +99,7 @@ public class APEXInstrumentRunner implements InstrumentRunner {
     try {
       server.start();
     } catch(IOException e) {
-      log.error("Error start server");
+      log.error("Error starting Dicom server: " + e);
     }
     apexReceiver.waitForExit();
   }
@@ -118,27 +118,49 @@ public class APEXInstrumentRunner implements InstrumentRunner {
    * Called by initialize(). Initialize and display the GUI for capturing the dcm files from Apex.
    */
   public void initApexReceiverStatus() {
-    apexReceiver.setParticipantId(participantID);
-    apexReceiver.setCheckActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent e) {
+    apexReceiver.setParticipantID(participantID);
+    apexReceiver.setCaptureActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent event) {
         retrieveMeasurements();
-        if(isCompleteVariable()) {
-          if(isRepeatable) {
-            apexReceiver.setVariableStatusOKButCheck();
+
+        List<String> missing = getMissingVariables();
+        boolean completeVariable = true;
+        boolean completeDicom = true;
+        if(false == missing.isEmpty()) {
+          int dicomCount = 0;
+          for(String out : missing) {
+            if(-1 != out.indexOf(DICOM)) {
+              dicomCount++;
+            }
+          }
+          completeVariable = dicomCount == missing.size();
+          completeDicom = 0 == dicomCount;
+        }
+
+        if(completeVariable) {  // all variables have been captured
+          if(isRepeatable && 1 < instrumentExecutionService.getExpectedMeasureCount()) {
+            apexReceiver.setVariableStatusOKPending();
           } else {
             apexReceiver.setVariableStatusOK();
           }
-          if(apexReceiver.isCompleteRawInDicom()) {
-            apexReceiver.setDicomStatusOK();
-            apexReceiver.setSaveEnable();
-          } else {
-            apexReceiver.setDicomStatusNotOK();
-          }
         } else {
           apexReceiver.setVariableStatusNotOK();
-          apexReceiver.setDicomStatusNotReady();
         }
-        apexReceiver.validate();
+        if(completeDicom) {  // all dicom files have been correctly captured
+          apexReceiver.setDicomStatusOK();
+        } else {
+          if(!apexReceiver.isValidPandRDicomFile() ||
+             !apexReceiver.isValidParticipantDicomFile()) {
+            apexReceiver.setDicomStatusNotOK();
+          } else { // no dicom files sent for verification
+            apexReceiver.setDicomStatusNotReady();
+          }
+        }
+
+        if(completeVariable && completeDicom) {
+          apexReceiver.setSaveEnable();
+        }
+
         apexReceiver.repaint();
       }
     });
@@ -171,21 +193,19 @@ public class APEXInstrumentRunner implements InstrumentRunner {
   }
 
   /**
-   * Called by initApexReceiverStatus(). Return true if all required variables were sent, false otherwise.
+   * Called by initApexReceiverStatus(). Return list of missing variables.
    *
    * @return
-   */
-  private boolean isCompleteVariable() {
+  */
+  private List<String> getMissingVariables() {
     List<String> missing = new ArrayList<String>();
     List<String> sentVariablesCopy = new ArrayList<String>(sentVariables);
-    boolean retValue = true;
 
     // if this is a repeatable measure, check if all variables in the measure have been sent
     for(int i = 0; i < instrumentExecutionService.getExpectedMeasureCount(); i++) {
       for(String out : outVendorNames) {
-        if(sentVariablesCopy.contains(out) == false) {
+        if(false == sentVariablesCopy.contains(out)) {
           missing.add(out);
-          retValue = false;
         } else {
           sentVariablesCopy.remove(out);
         }
@@ -194,18 +214,20 @@ public class APEXInstrumentRunner implements InstrumentRunner {
     if(false == missing.isEmpty()) {
       log.info("Missing variables: " + missing);
     }
-    return retValue;
+    return missing;
   }
 
   /**
    * Called by retrieveMeasurements(). Queries Apex PatScanDb for patient key, DOB, gender based on participant visit
    * ID. Extracts Hip, Forearm, Whole Body and Spine scans and analysis data.
+   *
+   * @return
    */
   private List<Map<String, Data>> retrieveDeviceData() {
 
     List<Map<String, Data>> dataList = new ArrayList<Map<String, Data>>();
 
-    log.info("participantId: " + participantID);
+    log.info("participantID: " + participantID);
 
     participantData.clear();
 
@@ -213,6 +235,7 @@ public class APEXInstrumentRunner implements InstrumentRunner {
     try {
       Map<String, Object> results = patScanDb.queryForMap(sql, new Object[] { participantID });
       if(null != results) {
+        participantData.put("participantID", participantID);
         participantData.put("participantKey", results.get("PATIENT_KEY").toString());
         participantData.put("participantDOB", results.get("BIRTHDATE").toString());
         participantData.put("participantGender", results.get("SEX").toString());
@@ -327,8 +350,6 @@ public class APEXInstrumentRunner implements InstrumentRunner {
     log.info(extractedData + "");
     log.info(outputData + "");
     dataList.add(outputData);
-
-    // participantFiles.addAll(extractor.getFileNames());
   }
 
   /**
@@ -360,7 +381,7 @@ public class APEXInstrumentRunner implements InstrumentRunner {
   }
 
   /**
-   * Called by shutdown(). Deletes all temporary dcm files transferred from Apex to client.
+   * Called by shutdown(). Deletes all dcm files transferred from Apex to client as well as parent folder.
    */
   private void deleteTemporaryDicomFiles() {
     log.info("Delete temporary dicom files");

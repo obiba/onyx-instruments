@@ -23,11 +23,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.dcm4che2.data.DicomElement;
 import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.Tag;
 import org.dcm4che2.tool.dcmrcv.ApexTag;
 import org.dcm4che2.tool.dcmrcv.DicomServer;
 import org.dcm4che2.tool.dcmrcv.DicomServer.StoredDicomFile;
+import org.dcm4che2.util.StringUtils;
 import org.obiba.onyx.jade.instrument.holologic.APEXInstrumentRunner.Side;
 import org.obiba.onyx.util.data.Data;
 import org.obiba.onyx.util.data.DataBuilder;
@@ -105,13 +107,6 @@ public abstract class APEXScanDataExtractor {
 
   private String scanMode;
 
-  /*
-   * private String pFileName;
-   *
-   * private String rFileName;
-   *
-   * private List<String> fileNames;
-   */
   private Map<String, String> participantData;
 
   private DicomServer server;
@@ -119,12 +114,12 @@ public abstract class APEXScanDataExtractor {
   private ApexReceiver apexReceiver;
 
   //
-  // Abstract get methods.
+  // Abstract methods.
   //
 
   public abstract String getName();
 
-  public abstract String getDicomBodyPartName();
+  public abstract String getBodyPartName();
 
   public abstract Side getSide();
 
@@ -134,10 +129,18 @@ public abstract class APEXScanDataExtractor {
 
   public abstract String getRefSource();
 
+  protected List<ApexDicomData> apexDicomList = new ArrayList<ApexDicomData>();
+
   /**
    * Constructor.
+   * @param patScanDb
+   * @param refCurveDb
+   * @param participantData
+   * @param server
+   * @param apexReceiver
    */
-  protected APEXScanDataExtractor(JdbcTemplate patScanDb, JdbcTemplate refCurveDb, Map<String, String> participantData, DicomServer server, ApexReceiver apexReceiver) {
+  protected APEXScanDataExtractor(JdbcTemplate patScanDb, JdbcTemplate refCurveDb,
+      Map<String, String> participantData, DicomServer server, ApexReceiver apexReceiver) {
     super();
     this.patScanDb = patScanDb;
     this.refCurveDb = refCurveDb;
@@ -162,9 +165,11 @@ public abstract class APEXScanDataExtractor {
     if(!data.isEmpty()) {
       log.info("getting data from concrete impl of extractDataImp");
       extractDataImpl(data);
-      log.info("getting TZscores... ");
       try {
-        computeTZScore(data);
+        if(!"LSPINE".equals(getBodyPartName())) {
+          log.info("getting TZscores... ");
+          computeTZScore(data);
+        }
       } catch(ParseException e) {
         log.info("failed to parse dates");
       }
@@ -579,13 +584,13 @@ public abstract class APEXScanDataExtractor {
       while(rs.next()) {
         scanID = rs.getString("SCANID");
         scanMode = rs.getString("SCAN_MODE");
-        log.info("Visiting scan: " + scanID);
         scanDate = rs.getString("SCAN_DATE");
+        log.info("Visiting scan: {}, mode: {}, date: {}", scanID, scanMode, scanDate);
       }
 
       if(null != scanID && null != scanMode) {
 
-        List<StoredDicomFile> selectList = new ArrayList<StoredDicomFile>();
+        List<StoredDicomFile> listSelected = new ArrayList<StoredDicomFile>();
         List<StoredDicomFile> listDicomFiles = server.listSortedDicomFiles();
 
         // there must be at least one dicom file with a body part examined key
@@ -597,13 +602,16 @@ public abstract class APEXScanDataExtractor {
         // ARM = forearm, expects 1 to 2 files
         // the study instance UID is used to further group files together
         //
-        String bodyPartName = getDicomBodyPartName();
+        String bodyPartName = getBodyPartName();
+        log.info("body part name: " + bodyPartName);
 
         boolean first = true;
+        int fileCount = 0;
         String dcmStudyInstanceUID = "";
         for(StoredDicomFile sdf : listDicomFiles) {
           try {
             DicomObject dicomObject = sdf.getDicomObject();
+            // only retain images from the same study
             if( first ) {
               dcmStudyInstanceUID = dicomObject.getString(Tag.StudyInstanceUID);
               first = false;
@@ -611,32 +619,11 @@ public abstract class APEXScanDataExtractor {
             if( !dcmStudyInstanceUID.equals(dicomObject.getString(Tag.StudyInstanceUID))) {
               continue;
             }
-            boolean dcmBodyPartKey = dicomObject.contains(Tag.BodyPartExamined);
-            int dcmBitsAllocated = dicomObject.getInt(Tag.BitsAllocated);
-            String dcmBodyPart = dicomObject.getString(Tag.BodyPartExamined);
-            String dcmSide = dicomObject.getString(Tag.Laterality);
-
-            if(null == bodyPartName){
-              if(dcmBodyPartKey && null == dcmSide) {
-                selectList.add(sdf);
-              }
-            } else if(bodyPartName.equals("LSPINE")) {
-              if(dcmBodyPartKey) {
-                if(bodyPartName.equals(dcmBodyPart) && 16 == dcmBitsAllocated) selectList.add(sdf);
-              } else {
-                selectList.add(sdf);
-              }
-            } else if(bodyPartName.equals("SPINE")) {
-              if(dcmBodyPartKey) {
-                if(null != dcmBodyPart && dcmBodyPart.endsWith(bodyPartName) && 8 == dcmBitsAllocated) selectList.add(sdf);
-              }
-            } else if(bodyPartName.equals("ARM")) {
-              if(dcmBodyPartKey) {
-                if(bodyPartName.equals(dcmBodyPart) && null != dcmSide) selectList.add(sdf);
-              }
-            } else if(bodyPartName.equals("HIP")) {
-              if(dcmBodyPartKey) {
-                if(bodyPartName.equals(dcmBodyPart) && null != dcmSide) selectList.add(sdf);
+            // only retain images with the correct set of dicom tags for the current body part exam
+            for(ApexDicomData dicomData : apexDicomList) {
+              if(dicomData.validate(sdf)) {
+                dicomData.file = sdf;
+                fileCount++;
               }
             }
           } catch(IOException e) {
@@ -644,49 +631,29 @@ public abstract class APEXScanDataExtractor {
           }
         }
 
-        if(!selectList.isEmpty()) {
-
-          // Whole Body
-          if(null == bodyPartName && 2 == selectList.size()) {
-            data.put(getResultPrefix() + "_SCANID", DataBuilder.buildText(scanID));
-            data.put(getResultPrefix() + "_SCAN_MODE", DataBuilder.buildText(scanMode));
-
-            log.info("processing whole body dicom");
-            processFilesExtractionWB(selectList, data);
+        if(fileCount >= apexDicomList.size()) {
+          switch(bodyPartName) {
+            case "WBODY":
+              log.info("processing whole body dicom");
+              break;
+            case "ARM":
+              log.info("processing forearm dicom side: " + getSide().toString());
+              break;
+            case "LSPINE":
+              log.info("processing lateral iva spine dicom");
+              break;
+            case "SPINE":
+              log.info("processing ap lumbar spine dicom");
+              break;
+            case "HIP":
+              log.info("processing hip dicom side: " + getSide().toString());
+              break;
           }
-          // Forearm
-          else if("ARM".equals(bodyPartName) && 2 >= selectList.size()) {
-            data.put(getResultPrefix() + "_SCANID", DataBuilder.buildText(scanID));
-            data.put(getResultPrefix() + "_SCAN_MODE", DataBuilder.buildText(scanMode));
-
-            log.info("processing forearm dicom side: " + getSide().toString());
-            processFilesExtractionForeArm(getSide(), selectList, data);
-          }
-          // Lateral IVA Spine
-          else if("LSPINE".equals(bodyPartName) && 3 == selectList.size()) {
-            data.put(getResultPrefix() + "_SCANID", DataBuilder.buildText(scanID));
-            data.put(getResultPrefix() + "_SCAN_MODE", DataBuilder.buildText(scanMode));
-
-            log.info("processing lateral iva spine dicom");
-            processFilesExtractionLSpine(listDicomFiles, data);
-          }
-          // AP Lumbar Spine
-          else if("SPINE".equals(bodyPartName) && 1 == selectList.size()) {
-            data.put(getResultPrefix() + "_SCANID", DataBuilder.buildText(scanID));
-            data.put(getResultPrefix() + "_SCAN_MODE", DataBuilder.buildText(scanMode));
-
-            log.info("processing ap lumbar spine dicom");
-            processFilesExtractionAPSpine(listDicomFiles, data);
-          }
-          // Hip
-          else if("HIP".equals(bodyPartName) && 2 >= selectList.size()) {
-            data.put(getResultPrefix() + "_SCANID", DataBuilder.buildText(scanID));
-            data.put(getResultPrefix() + "_SCAN_MODE", DataBuilder.buildText(scanMode));
-
-            log.info("processing hip dicom side: " + getSide().toString());
-            processFilesExtractionHip(getSide(), selectList, data);
-          }
+          data.put(getResultPrefix() + "_SCANID", DataBuilder.buildText(scanID));
+          data.put(getResultPrefix() + "_SCAN_MODE", DataBuilder.buildText(scanMode));
+          processFilesExtraction(data);
         }
+        log.info("stored dicom files: {}, selected for processing {} ", listDicomFiles.size(), fileCount);
       }
 
       log.info("finished processing files");
@@ -695,103 +662,35 @@ public abstract class APEXScanDataExtractor {
   }
 
   /**
-   * Called by ScanAnalysisResultSetExtractor extractData(). Adds Hip scan dicom files to data collection.
+   * Called by ScanAnalysisResultSetExtractor extractData(). Adds dicom files to data collection.
    *
-   * @param side
-   * @param files
    * @param data
    */
-  private void processFilesExtractionHip(Side side, List<StoredDicomFile> files, Map<String, Data> data) {
-    try {
-      for(int i = 0; i < files.size(); i++) {
-        StoredDicomFile storedDicomFile = files.get(i);
-        if(side != null && (side == Side.LEFT ? "L" : "R").equals(storedDicomFile.getDicomObject().getString(Tag.Laterality))) {
-          putDicom(data, getResultPrefix() + "_DICOM", storedDicomFile);
+  private void processFilesExtraction(Map<String, Data> data) {
+    for(ApexDicomData dicomData : apexDicomList) {
+      StoredDicomFile sdf = dicomData.file;
+      // if the file failed validation, it is not the correct body part being requested
+      if(null == sdf) continue;
+      boolean completeDicom = isCompleteDicom(sdf);
+      apexReceiver.updatePandRDicomFileState(completeDicom);
+      boolean correctDicom = isCorrectDicom(sdf);
+      apexReceiver.updateParticipantDicomFileState(correctDicom);
+      if(completeDicom && correctDicom) {
+        try{
+          log.info("putting dicom file with patient ID: {}",sdf.getDicomObject().getString(Tag.PatientID));
+          putDicom(data, dicomData.name, sdf);
+        } catch(IOException e) {
         }
+      } else {
+        // flag this file as being of no use
+        server.cacheDirtyFile(sdf);
+        dicomData.file = null;
       }
-    } catch(IOException e) {
     }
   }
 
   /**
-   * Called by ScanAnalysisResultSetExtractor extractData(). Adds Whole Body scan dicom files to data collection.
-   *
-   * @param files
-   * @param data
-   */
-  private void processFilesExtractionWB(List<StoredDicomFile> files, Map<String, Data> data) {
-    for(int i = 0; i < files.size(); i++) {
-      StoredDicomFile storedDicomFile = files.get(i);
-      putDicom(data, getResultPrefix() + "_DICOM" + "_" + (i + 1), storedDicomFile);
-    }
-  }
-
-  /**
-   * Called by ScanAnalysisResultSetExtractor extractData(). Adds Forearm scan dicom files to data collection.
-   *
-   * @param side
-   * @param files
-   * @param data
-   */
-  private void processFilesExtractionForeArm(Side side, List<StoredDicomFile> files, Map<String, Data> data) {
-    try {
-      for(int i = 0; i < files.size(); i++) {
-        StoredDicomFile storedDicomFile = files.get(i);
-        if(side != null && (side == Side.LEFT ? "L" : "R").equals(storedDicomFile.getDicomObject().getString(Tag.Laterality))) {
-          putDicom(data, getResultPrefix() + "_DICOM", storedDicomFile);
-        }
-      }
-    } catch(IOException e) {
-    }
-  }
-
-  /**
-   * Called by ScanAnalysisResultSetExtractor extractData(). Adds lateral IVA Spine scan dicom files to data collection.
-   *
-   * @param files
-   * @param data
-   */
-  private void processFilesExtractionLSpine(List<StoredDicomFile> files, Map<String, Data> data) {
-    try {
-      for(int i = 0; i < files.size(); i++) {
-        StoredDicomFile storedDicomFile = files.get(i);
-        String bodyPartExam = storedDicomFile.getDicomObject().getString(Tag.BodyPartExamined);
-        String modality = storedDicomFile.getDicomObject().getString(Tag.Modality);
-        int dcmBitsAllocated = storedDicomFile.getDicomObject().getInt(Tag.BitsAllocated);
-        if("LSPINE".equals(bodyPartExam) && 16 == dcmBitsAllocated) {
-          putDicom(data, getResultPrefix() + "_DICOM_MEASURE", storedDicomFile);
-        } else if("PR".equals(modality)) {
-          putDicom(data, getResultPrefix() + "_DICOM_PR", storedDicomFile);
-        } else {
-          putDicom(data, getResultPrefix() + "_DICOM_OT", storedDicomFile);
-        }
-      }
-    } catch(IOException e) {
-    }
-  }
-
-  /**
-   * Called by ScanAnalysisResultSetExtractor extractData(). Adds the AP lumbar Spine scan dicom file to data collection.
-   *
-   * @param files
-   * @param data
-   */
-  private void processFilesExtractionAPSpine(List<StoredDicomFile> files, Map<String, Data> data) {
-    try {
-      if(1 == files.size()) {
-        StoredDicomFile storedDicomFile = files.get(0);
-        String bodyPartExam = storedDicomFile.getDicomObject().getString(Tag.BodyPartExamined);
-        int dcmBitsAllocated = storedDicomFile.getDicomObject().getInt(Tag.BitsAllocated);
-        if("LSPINE".equals(bodyPartExam) && 8 == dcmBitsAllocated) {
-          putDicom(data, getResultPrefix() + "_DICOM", storedDicomFile);
-        }
-      }
-    } catch(IOException e) {
-    }
-  }
-
-  /**
-   * Called by processFilesExtraction* methods. Add a dicom file exported from Apex via DICOM send transfer to the data
+   * Called by processFilesExtraction method. Add a dicom file exported from Apex via DICOM send transfer to the data
    * collection.
    *
    * @param data
@@ -799,8 +698,6 @@ public abstract class APEXScanDataExtractor {
    * @param storedDicomFile
    */
   public void putDicom(Map<String, Data> data, String name, StoredDicomFile storedDicomFile) {
-    boolean completeDicom = isCompleteDicom(storedDicomFile);
-    apexReceiver.missingRawInDicomFile(completeDicom);
     Data binary = DataBuilder.buildBinary(storedDicomFile.getFile());
     data.put(name, binary);
   }
@@ -811,7 +708,7 @@ public abstract class APEXScanDataExtractor {
    * @return
    */
   private boolean isCompleteDicom(StoredDicomFile storedDicomFile) {
-    for(ApexTag tag : ApexTag.values())
+    for(ApexTag tag : ApexTag.PandRTagSet) {
       try {
         DicomObject dicomObject = storedDicomFile.getDicomObject();
         if(dicomObject.contains(tag.getValue())) {
@@ -822,6 +719,27 @@ public abstract class APEXScanDataExtractor {
         }
       } catch(IOException e) {
       }
+    }
+    return true;
+  }
+
+  /**
+   * Called by putDicom(). Return true if dicom contains correct participant identifier, false otherwise.
+   *
+   * @return
+   */
+  private boolean isCorrectDicom(StoredDicomFile storedDicomFile) {
+    String participantID = getParticipantID();
+    try {
+      DicomObject dicomObject = storedDicomFile.getDicomObject();
+      String patientID = dicomObject.getString(Tag.PatientID);
+      if(!participantID.equals(patientID)) {
+        log.info("Expecting file for participant with ID {} but received one with ID {}",
+          participantID, patientID);
+        return false;
+      }
+    } catch(IOException e) {
+    }
     return true;
   }
 
@@ -942,9 +860,105 @@ public abstract class APEXScanDataExtractor {
   }
 
   /**
+   *  Helper class for storing a validator and a unique variable name
+   *  for a given dicom image
+   */
+  protected class ApexDicomData {
+    public Map<Integer, TagEntry> validator = new HashMap<Integer, TagEntry>();
+
+    public String name;
+
+    public StoredDicomFile file;
+
+    public ApexDicomData() {
+      this.name = null;
+      this.file = null;
+    }
+
+    boolean validate(StoredDicomFile sdf) {
+      try {
+        DicomObject dicomObject = sdf.getDicomObject();
+        int failCount = 0;
+        for(Map.Entry<Integer,TagEntry> entry : validator.entrySet()) {
+          Integer tag = entry.getKey();
+          TagEntry te = entry.getValue();
+
+          boolean hasTag = dicomObject.contains(tag);
+          boolean hasValue = dicomObject.containsValue(tag);
+          String dicomValue = hasValue ? dicomObject.getString(tag).trim() : null;
+          String tagName = dicomObject.nameOf(tag);
+
+          if((te.expected && !hasTag) || (!te.expected && hasTag)) {
+            // fail condition expected or unexpected tag
+            failCount++;
+            continue;
+          }
+          if(!te.expected && !hasTag) {
+            // pass condition tag is not expected and tag is not present
+            continue;
+          }
+          if(te.matching) {
+            if(null == te.value) {
+              if(hasValue) {
+                // fail condition expected matching null tag value
+                failCount++;
+                continue;
+              }
+            } else {
+              if(!te.value.equals(dicomValue)) {
+                // fail condition expected matching tag value
+                failCount++;
+                continue;
+              }
+            }
+          } else {
+            if(!hasValue) {
+              // fail condition expected non-matching non-empty tag value
+              failCount++;
+              continue;
+            }
+          }
+        } // end for loop
+
+        if(0 == failCount) {
+          // found a conditionally valid file
+          return true;
+        }
+      } catch(IOException e) {
+      }
+
+      return false;
+    }
+
+  }
+
+  /**
+   * Helper class for identifying candidate dicom files based on their tags
+   */
+  protected class TagEntry {
+    public boolean expected;
+
+    public boolean matching;
+
+    public String value;
+
+    public TagEntry(boolean expected, boolean matching, String value) {
+      this.expected = expected;
+      this.matching = matching;
+      this.value = value;
+    }
+
+    public TagEntry() {
+      this.expected = false;
+      this.matching = false;
+      this.value = null;
+    }
+  }
+
+  /**
    * Helper class for computeTZScore().
    */
-  public final class ageBracket {
+  protected final class ageBracket {
     public Double ageMin;
 
     public Double ageMax;
@@ -979,22 +993,6 @@ public abstract class APEXScanDataExtractor {
     }
   }
 
-  //
-  // Set/Get methods
-  //
-  /*
-   * Methods to get P and R data files are not needed.
-   * Hologic embeds P and R data files in the DICOM data exported from APEX.
-   *
-   * protected String getPFileName() { return pFileName; }
-   *
-   * protected String getRFileName() { return rFileName; }
-   */
-  /*
-   * public List<String> getFileNames() { return fileNames != null ? fileNames : (fileNames = new ArrayList<String>());
-   * }
-   */
-
   protected JdbcTemplate getPatScanDb() {
     return patScanDb;
   }
@@ -1015,6 +1013,10 @@ public abstract class APEXScanDataExtractor {
     return participantData.get("participantEthnicity");
   }
 
+  protected String getParticipantID() {
+    return participantData.get("participantID");
+  }
+
   protected String getResultPrefix() {
     return getName();
   }
@@ -1026,4 +1028,5 @@ public abstract class APEXScanDataExtractor {
   protected String getScanDate() {
     return scanDate;
   }
+
 }
