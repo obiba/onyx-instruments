@@ -1,9 +1,9 @@
 /*******************************************************************************
  * Copyright 2008(c) The OBiBa Consortium. All rights reserved.
- * 
+ *
  * This program and the accompanying materials
  * are made available under the terms of the GNU Public License v3.0.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
@@ -28,48 +28,47 @@ import javax.swing.JPanel;
 
 public class ApexReceiver extends JFrame {
 
-  /**
-   * 
-   */
-  private static final String OK_BUT_CHECK = "Ok, click refresh in onyx";
+  private static final String OK_PENDING = "Ok, click refresh in onyx";
 
   private static final String HOLOGIC_APEX_RECEIVER = "Hologic Apex Receiver";
 
-  private static final String APEX_DATABASE_DICOM_FILES = "Apex database + DICOM files:";
+  private static final String APEX_DATABASE_VARIABLES = "Apex database variables:";
 
-  private static final String RAW_DATA_IN_DICOM_FILES = "Raw data in DICOM files:";
+  private static final String APEX_DICOM_FILES = "Apex DICOM files:";
 
-  private static final String CAPTURE_DATA_WAIT = "Waiting capture...";
+  private static final String CAPTURE_WAIT = "Waiting capture...";
 
-  private static final String MISSING_DATA = "Missing Data (variable database or Dicom Files)...";
+  private static final String MISSING_DATA = "Missing database variables...";
 
   private static final String OK = "OK";
 
-  private static final String P_AND_R_NOT_INCLUDED = "<html>P and R not included:<br>Configure Apex, close this window and restart</html>";
+  private static final String P_AND_R_NOT_INCLUDED = "P and R not included: Configure Apex, close this window and restart";
 
-  private static final String CAPTURE_DICOM = "Need to capture DICOM files";
+  private static final String INCORRECT_DICOM_SENT = "Incorrect participant image(s) sent from Apex";
 
-  private static final String CAPTURE_DATA = "Capture";
+  private static final String MISSING_DICOM = "Missing DICOM files...";
 
   private static final long serialVersionUID = 1L;
 
   private final CountDownLatch exitLatch = new CountDownLatch(1);
 
-  private JButton check;
+  private JButton captureButton;
 
-  private JPanel panelVariablesStatus;
+  private JPanel variableStatusPanel;
 
-  private JPanel panelDicomStatus;
+  private JPanel dicomStatusPanel;
 
-  private JLabel lblParticipantId;
+  private JLabel participantIDLabel;
 
-  private JLabel lblWaitingClickingCheckVariable;
+  private JLabel waitingCaptureVariableLabel;
 
-  private JLabel lblWaitingClickingCheckDicom;
+  private JLabel waitingCaptureDicomLabel;
 
-  private JButton btnSaveButton;
+  private JButton saveButton;
 
-  private boolean completeRawInDicom = true;
+  private boolean validParticipantDicom = true;
+
+  private boolean validPandRDicom = true;
 
   public ApexReceiver() {
     init();
@@ -80,62 +79,77 @@ public class ApexReceiver extends JFrame {
     setTitle(HOLOGIC_APEX_RECEIVER);
     getContentPane().setLayout(new BorderLayout(0, 0));
 
+    // add a panel to the center of the parent frame with a grid of 3 rows x 2 columns
     JPanel panel = new JPanel();
     panel.setBackground(Color.LIGHT_GRAY);
     getContentPane().add(panel, BorderLayout.CENTER);
     panel.setLayout(new GridLayout(3, 2, 0, 5));
 
-    JPanel panelParticipantId = new JPanel();
-    panel.add(panelParticipantId);
+    // add a child panel to the parent panel (row 1 col 1)
+    JPanel participantIDPanel = new JPanel();
+    panel.add(participantIDPanel);
 
-    lblParticipantId = new JLabel();
-    panelParticipantId.add(lblParticipantId);
+    // child panel contains participant ID label
+    participantIDLabel = new JLabel();
+    participantIDPanel.add(participantIDLabel);
 
-    JPanel panelCheck = new JPanel();
-    panel.add(panelCheck);
+    // add a child panel to the parent to hold the capture button (row 1 col 2)
+    JPanel capturePanel = new JPanel();
+    panel.add(capturePanel);
 
-    check = new JButton(CAPTURE_DATA);
-    panelCheck.add(check);
+    // add button to child panel
+    captureButton = new JButton("Capture");
+    capturePanel.add(captureButton);
 
-    JPanel panelVariablesLabel = new JPanel();
-    FlowLayout flowLayoutVariableLabel = (FlowLayout) panelVariablesLabel.getLayout();
-    flowLayoutVariableLabel.setAlignment(FlowLayout.RIGHT);
-    panel.add(panelVariablesLabel);
+    // child panel for variables label (row 2 col 1)
+    JPanel variableLabelPanel = new JPanel();
+    FlowLayout flowLayout = (FlowLayout) variableLabelPanel.getLayout();
+    flowLayout.setAlignment(FlowLayout.RIGHT);
+    panel.add(variableLabelPanel);
 
-    JLabel lblApexDatabase = new JLabel(APEX_DATABASE_DICOM_FILES);
-    panelVariablesLabel.add(lblApexDatabase);
+    // static variables label
+    JLabel databaseLabel = new JLabel(APEX_DATABASE_VARIABLES);
+    variableLabelPanel.add(databaseLabel);
 
-    panelVariablesStatus = new JPanel();
-    FlowLayout flowLayoutVariableStatus = (FlowLayout) panelVariablesStatus.getLayout();
-    flowLayoutVariableStatus.setAlignment(FlowLayout.LEFT);
-    panel.add(panelVariablesStatus);
+    // child panel for variables status label
+    variableStatusPanel = new JPanel();
+    flowLayout = (FlowLayout) variableStatusPanel.getLayout();
+    flowLayout.setAlignment(FlowLayout.LEFT);
+    panel.add(variableStatusPanel);
 
-    lblWaitingClickingCheckVariable = new JLabel(CAPTURE_DATA_WAIT);
-    panelVariablesStatus.add(lblWaitingClickingCheckVariable);
+    // dynamic variables status label
+    waitingCaptureVariableLabel = new JLabel(CAPTURE_WAIT);
+    variableStatusPanel.add(waitingCaptureVariableLabel);
 
-    JPanel panelDicomLabel = new JPanel();
-    FlowLayout flowLayoutDicom = (FlowLayout) panelDicomLabel.getLayout();
-    flowLayoutDicom.setAlignment(FlowLayout.RIGHT);
-    panel.add(panelDicomLabel);
+    // child panel for variables label (row 3 col 1)
+    JPanel dicomLabelPanel = new JPanel();
+    flowLayout = (FlowLayout) dicomLabelPanel.getLayout();
+    flowLayout.setAlignment(FlowLayout.RIGHT);
+    panel.add(dicomLabelPanel);
 
-    JLabel lblRawDataIn = new JLabel(RAW_DATA_IN_DICOM_FILES);
-    panelDicomLabel.add(lblRawDataIn);
+    // static dicom data label
+    JLabel labelRawDataIn = new JLabel(APEX_DICOM_FILES);
+    dicomLabelPanel.add(labelRawDataIn);
 
-    panelDicomStatus = new JPanel();
-    FlowLayout flowLayoutDicomStatus = (FlowLayout) panelDicomStatus.getLayout();
-    flowLayoutDicomStatus.setAlignment(FlowLayout.LEFT);
-    panel.add(panelDicomStatus);
+    // child panel for dicom data status label (row 3 col 2)
+    dicomStatusPanel = new JPanel();
+    flowLayout = (FlowLayout) dicomStatusPanel.getLayout();
+    flowLayout.setAlignment(FlowLayout.LEFT);
+    panel.add(dicomStatusPanel);
 
-    lblWaitingClickingCheckDicom = new JLabel(CAPTURE_DATA_WAIT);
-    panelDicomStatus.add(lblWaitingClickingCheckDicom);
+    // dynamic dicom data status label
+    waitingCaptureDicomLabel = new JLabel(CAPTURE_WAIT);
+    dicomStatusPanel.add(waitingCaptureDicomLabel);
 
-    JPanel panelSaveButton = new JPanel();
-    getContentPane().add(panelSaveButton, BorderLayout.SOUTH);
+    // child panel for save button
+    JPanel savePanel = new JPanel();
+    getContentPane().add(savePanel, BorderLayout.SOUTH);
 
-    btnSaveButton = new JButton(OK);
-    panelSaveButton.add(btnSaveButton);
+    // save button
+    saveButton = new JButton(OK);
+    savePanel.add(saveButton);
     setSaveDisable();
-    btnSaveButton.addActionListener(new ActionListener() {
+    saveButton.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
         ApexReceiver.this.dispose();
@@ -157,52 +171,64 @@ public class ApexReceiver extends JFrame {
     });
   }
 
-  public void setCheckActionListener(ActionListener actionListener) {
-    check.addActionListener(actionListener);
+  public void setCaptureActionListener(ActionListener actionListener) {
+    captureButton.addActionListener(actionListener);
   }
 
   public void setVariableStatusOK() {
-    lblWaitingClickingCheckVariable.setText(OK);
-    panelVariablesStatus.setBackground(Color.GREEN);
+    waitingCaptureVariableLabel.setText(OK);
+    variableStatusPanel.setBackground(Color.GREEN);
   }
 
   public void setVariableStatusNotOK() {
-    lblWaitingClickingCheckVariable.setText(MISSING_DATA);
-    panelVariablesStatus.setBackground(Color.RED);
+    waitingCaptureVariableLabel.setText(MISSING_DATA);
+    variableStatusPanel.setBackground(Color.RED);
     setSaveDisable();
   }
 
-  public void setVariableStatusOKButCheck() {
-    lblWaitingClickingCheckVariable.setText(OK_BUT_CHECK);
-    panelVariablesStatus.setBackground(Color.GREEN);
+  public void setVariableStatusOKPending() {
+    waitingCaptureVariableLabel.setText(OK_PENDING);
+    variableStatusPanel.setBackground(Color.GREEN);
   }
 
   public void setDicomStatusOK() {
-    lblWaitingClickingCheckDicom.setText(OK);
-    panelDicomStatus.setBackground(Color.GREEN);
+    waitingCaptureDicomLabel.setText(OK);
+    dicomStatusPanel.setBackground(Color.GREEN);
+    initializeDicomFileState();
   }
 
   public void setDicomStatusNotOK() {
-    lblWaitingClickingCheckDicom.setText(P_AND_R_NOT_INCLUDED);
-    panelDicomStatus.setBackground(Color.RED);
+    StringBuilder result = new StringBuilder();
+    if(false == isValidPandRDicomFile()) {
+      result.append(P_AND_R_NOT_INCLUDED);
+    }
+    if(false == isValidParticipantDicomFile()) {
+      if(result.toString().isEmpty()) result.append(System.lineSeparator());
+      result.append(INCORRECT_DICOM_SENT);
+    }
+    waitingCaptureDicomLabel.setText(result.toString());
+    dicomStatusPanel.setBackground(Color.RED);
+    initializeDicomFileState();
+    setSaveDisable();
+  }
+
+  public void setDicomStatusNotReady() {
+    waitingCaptureDicomLabel.setText(MISSING_DICOM);
+    dicomStatusPanel.setBackground(Color.RED);
+    initializeDicomFileState();
     setSaveDisable();
   }
 
   private void setSaveDisable() {
-    btnSaveButton.setEnabled(false);
+    saveButton.setEnabled(false);
   }
 
   public void setSaveEnable() {
-    btnSaveButton.setEnabled(true);
+    saveButton.setEnabled(true);
   }
 
-  public void setDicomStatusNotReady() {
-    lblWaitingClickingCheckDicom.setText(CAPTURE_DICOM);
-    panelDicomStatus.setBackground(Color.RED);
-  }
-
-  public void setParticipantId(String id) {
-    lblParticipantId.setText("Participant Id: " + id);
+  public void setParticipantID(String id) {
+    participantIDLabel.setText("Participant ID: " + id);
   }
 
   public void waitForExit() {
@@ -213,12 +239,25 @@ public class ApexReceiver extends JFrame {
     }
   }
 
-  public void missingRawInDicomFile(boolean completeDicom) {
-    completeRawInDicom &= completeDicom;
+  public void updatePandRDicomFileState(boolean state) {
+    validPandRDicom &= state;
   }
 
-  public boolean isCompleteRawInDicom() {
-    return completeRawInDicom;
+  public boolean isValidPandRDicomFile() {
+    return validPandRDicom;
+  }
+
+  public void updateParticipantDicomFileState(boolean state) {
+    validParticipantDicom &= state;
+  }
+
+  public boolean isValidParticipantDicomFile() {
+    return validParticipantDicom;
+  }
+
+  public void initializeDicomFileState() {
+    validPandRDicom = true;
+    validParticipantDicom = true;
   }
 
 }

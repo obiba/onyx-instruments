@@ -310,7 +310,8 @@ public class DicomStorageScp {
     settings.setPort(1100);
     settings.setAeTitle("DICOMSTORAGESCP");
 
-    DicomStorageScp scp = new DicomStorageScp(new DicomServer(f, settings), new VividInstrumentRunner.VividDicomStoragePredicate(output));
+    DicomStorageScp scp = new DicomStorageScp(new DicomServer(f, settings),
+      new VividInstrumentRunner.VividDicomStoragePredicate(output, null));
     scp.show();
     scp.waitForExit();
   }

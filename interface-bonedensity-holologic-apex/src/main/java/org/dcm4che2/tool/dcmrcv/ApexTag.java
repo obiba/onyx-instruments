@@ -1,16 +1,23 @@
 /*******************************************************************************
  * Copyright 2008(c) The OBiBa Consortium. All rights reserved.
- * 
+ *
  * This program and the accompanying materials
  * are made available under the terms of the GNU Public License v3.0.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 package org.dcm4che2.tool.dcmrcv;
 
+import java.util.EnumSet;
+
 public enum ApexTag {
-  PFILENAME(0x00231001), PFILEDATA(0x00231002), PFILELENGTH(0x00231003), RFILEDATA(0x00231004), RFILELENGTH(0x00231005);
+  PFILENAME(0x00231001),
+  PFILEDATA(0x00231002),
+  PFILELENGTH(0x00231003),
+  RFILEDATA(0x00231004),
+  RFILELENGTH(0x00231005),
+  IVARESULTSFLAG(0x00131000);
 
   private int value;
 
@@ -21,5 +28,12 @@ public enum ApexTag {
   public int getValue() {
     return value;
   }
+
+  public static final EnumSet<ApexTag> PandRTagSet = EnumSet.of(
+    ApexTag.PFILENAME,
+    ApexTag.PFILEDATA,
+    ApexTag.PFILELENGTH,
+    ApexTag.RFILEDATA,
+    ApexTag.RFILELENGTH);
 
 }
