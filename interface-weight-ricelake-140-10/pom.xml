@@ -41,6 +41,10 @@
       <version>2.1.7-r2</version>
       <classifier>win32</classifier>
     </dependency>
+    <dependency>
+      <groupId>org.obiba.jade.instrument</groupId>
+      <artifactId>instrument-bootstrap</artifactId>
+    </dependency>
   </dependencies>
 
   <build>

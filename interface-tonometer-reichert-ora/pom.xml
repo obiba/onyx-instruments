@@ -33,7 +33,11 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-jdbc</artifactId>
-    </dependency>    
+    </dependency>
+    <dependency>
+      <groupId>org.obiba.jade.instrument</groupId>
+      <artifactId>instrument-bootstrap</artifactId>
+    </dependency>
   </dependencies>
 
   <build>
