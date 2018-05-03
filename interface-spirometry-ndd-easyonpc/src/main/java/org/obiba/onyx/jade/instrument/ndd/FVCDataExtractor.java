@@ -1,9 +1,9 @@
 /*******************************************************************************
  * Copyright (c) 2011 OBiBa. All rights reserved.
- *  
+ *
  * This program and the accompanying materials
  * are made available under the terms of the GNU Public License v3.0.
- *  
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
@@ -28,7 +28,10 @@ public class FVCDataExtractor extends TestDataExtractor<FVCData> {
 
   public FVCDataExtractor() {
     super();
+    allowAllTrials = false;
   }
+
+  private boolean allowAllTrials;
 
   @Override
   protected String getName() {
@@ -45,7 +48,7 @@ public class FVCDataExtractor extends TestDataExtractor<FVCData> {
     log.info("Found {} trials", trials.getLength());
 
     for(int i = 0; i < trials.getLength(); i++) {
-      if(extractTrialStringValue(i + 1, "/Accepted").equals("true")) {
+      if(extractTrialStringValue(i + 1, "/Accepted").equals("true") || allowAllTrials) {
         log.info("Processing trial {}", i + 1);
         FVCTrialData tData = new FVCTrialData();
         data.getTrials().add(tData);
@@ -113,6 +116,10 @@ public class FVCDataExtractor extends TestDataExtractor<FVCData> {
     public byte[] getVolumeValues() {
       return volumeValues;
     }
+  }
+
+  public void setAllowAllTrials(boolean allow) {
+    this.allowAllTrials = allow;
   }
 
 }
