@@ -28,10 +28,10 @@ public class FVCDataExtractor extends TestDataExtractor<FVCData> {
 
   public FVCDataExtractor() {
     super();
-    allowAllTrials = false;
+    acceptAllTrials = false;
   }
 
-  private boolean allowAllTrials;
+  private boolean acceptAllTrials;
 
   @Override
   protected String getName() {
@@ -48,7 +48,7 @@ public class FVCDataExtractor extends TestDataExtractor<FVCData> {
     log.info("Found {} trials", trials.getLength());
 
     for(int i = 0; i < trials.getLength(); i++) {
-      if(extractTrialStringValue(i + 1, "/Accepted").equals("true") || allowAllTrials) {
+      if(extractTrialStringValue(i + 1, "/Accepted").equals("true") || acceptAllTrials) {
         log.info("Processing trial {}", i + 1);
         FVCTrialData tData = new FVCTrialData();
         data.getTrials().add(tData);
@@ -118,8 +118,8 @@ public class FVCDataExtractor extends TestDataExtractor<FVCData> {
     }
   }
 
-  public void setAllowAllTrials(boolean allow) {
-    this.allowAllTrials = allow;
+  public void setAcceptAllTrials(boolean accept) {
+    this.acceptAllTrials = accept;
   }
 
 }
