@@ -17,6 +17,7 @@
     <property name="exchangePath" value="${org.obiba.onyx.jade.instrument.ndd.easywarepro.exchangePath}"/>
     <property name="inFileName" value="${org.obiba.onyx.jade.instrument.ndd.easywarepro.inFileName}"/>
     <property name="outFileName" value="${org.obiba.onyx.jade.instrument.ndd.easywarepro.outFileName}"/>
+    <property name="acceptAllTrials" value="${org.obiba.onyx.jade.instrument.ndd.easywarepro.acceptAllTrials}"/>
   </bean>
   
   <bean name="externalAppHelper" class="org.obiba.onyx.jade.instrument.ExternalAppLauncherHelper">
