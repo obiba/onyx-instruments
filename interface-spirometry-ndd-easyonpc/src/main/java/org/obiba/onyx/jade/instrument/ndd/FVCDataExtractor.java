@@ -122,4 +122,8 @@ public class FVCDataExtractor extends TestDataExtractor<FVCData> {
     this.acceptAllTrials = accept;
   }
 
+  public  boolean getAcceptAllTrials() {
+    return this.acceptAllTrials;
+  }
+
 }
