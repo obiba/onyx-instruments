@@ -323,7 +323,7 @@
     <connection>scm:git:git://github.com/obiba/onyx-instruments.git</connection>
     <developerConnection>scm:git:https://github.com/obiba/onyx-instruments.git</developerConnection>
     <url>https://github.com/obiba/onyx-instruments</url>
-    <tag>HEAD</tag>
+    <tag>onyx-instruments-1.11.x</tag>
   </scm>
 
   <issueManagement>
