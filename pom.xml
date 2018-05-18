@@ -47,6 +47,7 @@
     <!-- maven plugins -->
     <maven-buildnumber-plugin.version>1.2</maven-buildnumber-plugin.version>
     <maven-dependency-plugin.version>2.1</maven-dependency-plugin.version>
+    <maven-deploy-plugin.version>2.7</maven-deploy-plugin.version>
     <maven-jar-plugin.version>2.4</maven-jar-plugin.version>
     <maven-release-plugin.version>2.5.2</maven-release-plugin.version>
     <maven-source-plugin.version>2.2</maven-source-plugin.version>
@@ -247,6 +248,12 @@
             </goals>
           </execution>
         </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>${maven-deploy-plugin.version}</version>
       </plugin>
 
       <plugin>
