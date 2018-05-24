@@ -57,6 +57,8 @@ public class EasyWareProInstrumentRunner implements InstrumentRunner {
 
   private boolean retrieveDeviceDataError = false;
 
+  private boolean acceptAllTrials;
+
   public EasyWareProInstrumentRunner() {
     super();
   }
@@ -191,7 +193,7 @@ public class EasyWareProInstrumentRunner implements InstrumentRunner {
 
     try {
       EMRXMLParser<FVCData> parser = new EMRXMLParser<FVCData>();
-      parser.parse(new FileInputStream(outFile), new FVCDataExtractor());
+      parser.parse(new FileInputStream(outFile), new FVCDataExtractor(isAcceptAllTrials()));
       Map<String, Data> data = new HashMap<String, Data>();
 
       ParticipantData pData = parser.getParticipantData();
@@ -359,4 +361,11 @@ public class EasyWareProInstrumentRunner implements InstrumentRunner {
     return new File(exchangePath, outFileName);
   }
 
+  public void setAcceptAllTrials(boolean acceptAllTrials) {
+    this.acceptAllTrials = acceptAllTrials;
+  }
+
+  public boolean isAcceptAllTrials() {
+    return acceptAllTrials;
+  }
 }

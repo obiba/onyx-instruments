@@ -26,12 +26,12 @@ public class FVCDataExtractor extends TestDataExtractor<FVCData> {
 
   private static final Logger log = LoggerFactory.getLogger(FVCDataExtractor.class);
 
-  public FVCDataExtractor() {
-    super();
-    acceptAllTrials = false;
-  }
+  private final boolean acceptAllTrials;
 
-  private boolean acceptAllTrials;
+  public FVCDataExtractor(boolean acceptAllTrials) {
+    super();
+    this.acceptAllTrials = acceptAllTrials;
+  }
 
   @Override
   protected String getName() {
@@ -116,14 +116,6 @@ public class FVCDataExtractor extends TestDataExtractor<FVCData> {
     public byte[] getVolumeValues() {
       return volumeValues;
     }
-  }
-
-  public void setAcceptAllTrials(boolean accept) {
-    this.acceptAllTrials = accept;
-  }
-
-  public  boolean getAcceptAllTrials() {
-    return this.acceptAllTrials;
   }
 
 }
