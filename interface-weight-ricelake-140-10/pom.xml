@@ -15,13 +15,13 @@
   <description>Physical Measurement Weight Rice Lake 140-10 Interface</description>
 
   <parent>
-    <groupId>org.obiba.jade.instrument</groupId>
+    <groupId>org.obiba.onyx</groupId>
     <artifactId>onyx-instruments</artifactId>
     <version>1.12-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <groupId>org.obiba.jade.instrument</groupId>
+  <groupId>org.obiba.onyx</groupId>
   <artifactId>interface-weight-ricelake-140-10</artifactId>
   <packaging>jar</packaging>
 
@@ -42,8 +42,8 @@
       <classifier>win32</classifier>
     </dependency>
     <dependency>
-      <groupId>org.obiba.jade.instrument</groupId>
-      <artifactId>instrument-bootstrap</artifactId>
+      <groupId>org.obiba.onyx</groupId>
+      <artifactId>onyx-instrument-bootstrap</artifactId>
     </dependency>
   </dependencies>
 
@@ -69,7 +69,7 @@
         </configuration>
       </plugin>
       <plugin>
-        <groupId>org.codehaus.mojo.webstart</groupId>
+        <groupId>org.codehaus.mojo</groupId>
         <artifactId>webstart-maven-plugin</artifactId>
         <executions>
           <execution>

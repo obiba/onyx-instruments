@@ -14,13 +14,13 @@
   <name>ntlmauth native library for jtds</name>
 
   <parent>
-    <groupId>org.obiba.jade.instrument</groupId>
+    <groupId>org.obiba.onyx</groupId>
     <artifactId>onyx-instruments</artifactId>
     <version>1.12-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <groupId>org.obiba.jade.instrument</groupId>
+  <groupId>org.obiba.onyx</groupId>
   <artifactId>jtds-ntlmauth</artifactId>
   <packaging>jar</packaging>
 
