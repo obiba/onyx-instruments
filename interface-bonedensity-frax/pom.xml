@@ -6,13 +6,13 @@
   <description>Physical Measurement Bone Density FRAX Interface</description>
 
   <parent>
-    <groupId>org.obiba.jade.instrument</groupId>
+    <groupId>org.obiba.onyx</groupId>
     <artifactId>onyx-instruments</artifactId>
     <version>1.12-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <groupId>org.obiba.jade.instrument</groupId>
+  <groupId>org.obiba.onyx</groupId>
   <artifactId>interface-bonedensity-frax</artifactId>
   <packaging>jar</packaging>
 
@@ -22,8 +22,8 @@
       <artifactId>slf4j-api</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.obiba.jade.instrument</groupId>
-      <artifactId>instrument-bootstrap</artifactId>
+      <groupId>org.obiba.onyx</groupId>
+      <artifactId>onyx-instrument-bootstrap</artifactId>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -59,7 +59,7 @@
         </configuration>
       </plugin>
       <plugin>
-        <groupId>org.codehaus.mojo.webstart</groupId>
+        <groupId>org.codehaus.mojo</groupId>
         <artifactId>webstart-maven-plugin</artifactId>
         <executions>
           <execution>

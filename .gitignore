@@ -5,3 +5,4 @@ target/
 *.iml
 atlassian-ide-plugin.xml
 overlays/
+velocity.log
