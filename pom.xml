@@ -42,7 +42,7 @@
     <junit.version>4.12</junit.version>
     <onyx.version>1.12-SNAPSHOT</onyx.version>
     <slf4j.version>1.7.12</slf4j.version>
-    <spring.version>4.2.1.RELEASE</spring.version>
+    <spring.version>4.3.19.RELEASE</spring.version>
 
     <!-- maven plugins -->
     <bintray-maven-plugin.version>1.2.20180117184439</bintray-maven-plugin.version>
