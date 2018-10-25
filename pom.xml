@@ -351,6 +351,7 @@
     <connection>scm:git:https://github.com/obiba/onyx-instruments.git</connection>
     <developerConnection>scm:git:https://github.com/obiba/onyx-instruments.git</developerConnection>
     <url>https://github.com/obiba/onyx-instruments</url>
+    <tag>onyx-instruments-1.12.x</tag>
   </scm>
 
   <issueManagement>
