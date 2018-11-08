@@ -14,6 +14,7 @@
   <bean name="externalAppHelper" class="org.obiba.onyx.jade.instrument.ExternalAppLauncherHelper">
     <property name="workDir" value="${org.obiba.onyx.jade.instrument.cardiffuniversity.path}" />
     <property name="executable" value="${org.obiba.onyx.jade.instrument.cardiffuniversity.exe}" />
+    <property name="tokenizer" value=" "/>
   </bean>
 
 </beans>
