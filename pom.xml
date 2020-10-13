@@ -39,7 +39,7 @@
     <project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
 
     <easymock.version>3.4</easymock.version>
-    <junit.version>4.12</junit.version>
+    <junit.version>4.13.1</junit.version>
     <onyx.version>1.13-SNAPSHOT</onyx.version>
     <slf4j.version>1.7.12</slf4j.version>
     <spring.version>4.3.19.RELEASE</spring.version>
